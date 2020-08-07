@@ -66,7 +66,7 @@ typedef int32_t mem_word;
 
 /* Exclusive, but include 4K at top of stack. */
 
-#define STACK_TOP ((mem_addr) 0x80000000)
+//#define STACK_TOP ((mem_addr) 0x80000000)
 
 
 

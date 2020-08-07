@@ -156,6 +156,7 @@
 #define READ_STRING_SYSCALL	8
 #define SBRK_SYSCALL		9
 #define EXIT_SYSCALL		10
+#define GET_PROC_NUM_SYSCALL    11
 
 
 

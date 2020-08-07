@@ -120,7 +120,8 @@ int MIPS4KC::do_syscall (void)
       switch (R[REG_V0].getData())
 	{
 	case PRINT_INT_SYSCALL:
-          write_output (console_out, "PRINT_INT_SYSCALL: %d %u %x\n", 
+          write_output (console_out, "PRINT_INT_SYSCALL(p%d): %d %u %x\n", 
+                        proc_num, 
                         R[REG_A0].getData(), R[REG_A0].getData(), R[REG_A0].getData());
 	  break;
 
@@ -186,6 +187,10 @@ int MIPS4KC::do_syscall (void)
 	  if (cycle_level) return (-1);
 	  else
 	    return (0);
+
+        case GET_PROC_NUM_SYSCALL:
+            R[REG_RES] = proc_num;
+            break;
 
 	default:
 	  if (cycle_level) 

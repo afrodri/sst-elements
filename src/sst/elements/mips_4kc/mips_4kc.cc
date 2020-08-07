@@ -61,7 +61,11 @@ MIPS4KC::MIPS4KC(ComponentId_t id, Params& params) :
     // set timeout
     timeout = params.find<int64_t>("timeout", -1);
 
+    // set stack 
+    STACK_TOP = params.find<uint32_t>("stack_top", 0x80000000);
 
+    // processor number
+    proc_num = params.find<uint32_t>("proc_num", 0);
 
     // set executable file
     string execFile = params.find<std::string>("execFile");

@@ -120,7 +120,9 @@ public:
             {"fault_period", "(uint64) Over what period (cycles or instructions) should faults be injected", "100"},
             {"fault_file", "(string:pathname) Path to file containing faults to inject", "(null)"},
             {"fault_rng_seed", "RNG seed for fault injection (0 for system clock)", "0"},
-            {"timeout", "Timeout. Period (in cycles) after which the processor will automatically cease processing and print timeout message", "-1"}
+            {"timeout", "Timeout. Period (in cycles) after which the processor will automatically cease processing and print timeout message", "-1"},
+            {"stack_top","Starting top of stack","0x80000000"},
+            {"proc_num","Processor Number, returned by syscall","0"}
                             )
 
     SST_ELI_DOCUMENT_PORTS( {"mem_link", "Connection to memory", { "memHierarchy.MemEventBase" } } )
@@ -230,6 +232,7 @@ protected:
     int mapped_io;		/* Non-zero => activate memory-mapped IO */
     string execFile;
     uint32_t outputLevel;
+    uint32_t proc_num;
     int64_t timeout;
 
     /* signal / exception */
@@ -257,6 +260,7 @@ protected:
     short *stack_seg_h=0;	/* Points to same vector as STACK_SEG */
     BYTE_TYPE *stack_seg_b=0;	/* Ditto */
     mem_addr stack_bot=0;
+    mem_addr STACK_TOP=0x80000000;
     /* The kernel text segment and boundaries. */
     instruction **k_text_seg=0;
     mem_addr k_text_top=0;

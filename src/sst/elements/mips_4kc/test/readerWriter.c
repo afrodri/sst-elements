@@ -1,14 +1,52 @@
 typedef unsigned int uint32_t;
 
+/* 
+
+   Test of SIMD-like multi processor. For use with test_multi.py sst script.
+   
+   Processor 1 is the "reader." Processor 0 is the "writer."
+
+   There is a 4 word mailbox that they share. mailbox[0] is used as a
+   semaphore. All mailbox words are originally set to 0. 
+
+   0. Each processor reads what it number is (GET_PROC_NUM_SYSCALL
+   syscall) and then prints that (PRINT_INT) syscall.
+
+   Reader:
+   1. "reader" (p1) waits for mailbox[0] to be set to != 0
+
+   2. It then reads and PRINT_INTs each value in the mailbox
+   (0x1,0x1,0x2,0xdeadbeef)
+
+   3. It sets mailbox[0] back to 0
+
+   4. Waits for mailbox[0] != 0
+
+   5. Reads and PRINTs each value in the mailbox (0x1,0x2,0x4,0x5)
+
+   Writer:
+
+   1. Sets the contents (mailbox[1..3]) to (0x1,0x2,0xdeadbeef)
+
+   2. Sets the mailbox semaphore (mailbox[0]) to 1
+
+   3. Waits for mailbox[0] == 0
+
+   4. Sets the mailbox contents to (0x2,0x4,0x5)
+
+   5. Sets the mailbox semaphore to 1.
+
+ */
+
 volatile uint32_t mailbox[4] = {0,0,0,0};
 uint32_t scratch[32];
 
 int main() {
     // find out who I am
     uint32_t proc_num;
-    asm volatile ("li $v0, 11\n"      /* Set for 'GET_PROC_NUM_SYSCALL' syscall */
+    asm volatile ("li $v0, 11\n"    /* Set for 'GET_PROC_NUM_SYSCALL' syscall */
                   "syscall\n"
-                  "addi $0, r2, 0" : "=r" (proc_num) : : "v0");
+                  "move %0, $2" : "=r" (proc_num) : : "v0");
 
     // print proc_num
     asm volatile ("move $a0, %0\n"   /* Move 'proc_num' into $a0 */
