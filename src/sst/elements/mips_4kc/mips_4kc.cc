@@ -29,6 +29,10 @@ uint64_t reg_word::faultStats[faultTrack::LAST_FAULT_STATUS] = {};
 map<int32_t, memFaultDesc> reg_word::memFaults;
 map<int32_t, uint8_t> reg_word::origMem;
 
+int MIPS4KC::sorted_name_table = 0;
+int MIPS4KC::sorted_i_opcode_table = 0; 
+int MIPS4KC::sorted_a_opcode_table = 0;
+
 MIPS4KC::MIPS4KC(ComponentId_t id, Params& params) :
     Component(id), 
     break_inst(NULL), program_break(0), 

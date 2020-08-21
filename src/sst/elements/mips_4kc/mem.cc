@@ -126,7 +126,7 @@ void MIPS4KC::make_memory (long int text_size, long int data_size, long int data
 
 /* Free the storage used by the old instructions in memory. */
 
-void MIPS4KC::free_instructions (register instruction **inst, int n)
+void MIPS4KC::free_instructions (instruction **inst, int n)
 {
     printf("FREEING Instructions\n");
 

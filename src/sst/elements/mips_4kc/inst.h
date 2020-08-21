@@ -84,6 +84,7 @@ typedef struct inst_s
   unsigned long encoding;
   imm_expr *expr;
   char *source_line;
+  bool faulted;
 } instruction;
 
 

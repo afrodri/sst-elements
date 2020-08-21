@@ -303,7 +303,8 @@ int MIPS4KC::cycle_spim (int display)
       }
 
       process_WB(ps_ptr);
-
+      reg_word::countINSTFaults(STAGE_PC(ps_ptr), ps_ptr->inst->faulted);
+      
       /* maintain invariant */
       R[0] = 0;
       stage_dealloc(ps_ptr);
@@ -357,6 +358,9 @@ int MIPS4KC::cycle_spim (int display)
             } else {
                 fatal_error("mem stage not set correctly\n");
             }
+            // check for faults on the mem_bypass which may have been
+            // set above.
+            faultChecker.checkAndInject_MEM_BP_FAULT(MEM_bp_val);
         }
     }
 
@@ -435,8 +439,10 @@ int MIPS4KC::cycle_spim (int display)
                 return 2;
             }
 
+            faultChecker.checkAndInject_INST_ADDR_FAULT(STAGE_PC(ps_ptr));
             CL_READ_MEM_INST(ps_ptr->inst, STAGE_PC(ps_ptr),
                              PADDR(ps_ptr), EXCPT(ps_ptr));
+            faultChecker.checkAndInject_INST_TYPE_FAULT(ps_ptr);
             //printf("IF fetch %x\n", STAGE_PC(ps_ptr).getData());
 
             /* if exception, must be tlb, read instruction for viewing purposes */

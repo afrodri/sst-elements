@@ -61,7 +61,12 @@ const std::map<std::string, faultChecker_t::location_idx_t> faultChecker_t::pars
     {"MEM_PRE", MEM_PRE_FAULT_IDX},
     {"MEM_POST", MEM_POST_FAULT_IDX},
     {"WB", WB_FAULT_IDX},
-    {"ALU", ALU_FAULT_IDX}
+    {"ALU", ALU_FAULT_IDX},
+    {"MEM_BP",MEM_BP_FAULT_IDX},
+    {"CONTROL",CONTROL_FAULT_IDX},
+    {"INST_ADDR",INST_ADDR_FAULT_IDX},
+    {"INST_TYPE",INST_TYPE_FAULT_IDX},
+    {"WB_ADDR",WB_ADDR_FAULT_IDX}
 };
 
 void faultChecker_t::init(faultTrack::location_t loc, uint64_t period, string fault_file,
@@ -100,6 +105,11 @@ void faultChecker_t::init(faultTrack::location_t loc, uint64_t period, string fa
     GEN_F_TIME(MEM_POST_FAULT);
     GEN_F_TIME(WB_FAULT);
     GEN_F_TIME(ALU_FAULT);
+    GEN_F_TIME(MEM_BP_FAULT);
+    GEN_F_TIME(CONTROL_FAULT);
+    GEN_F_TIME(INST_ADDR_FAULT);
+    GEN_F_TIME(INST_TYPE_FAULT);
+    GEN_F_TIME(WB_ADDR_FAULT);
 
 #undef GEN_F_TIME
 
@@ -295,7 +305,25 @@ bool faultChecker_t::checkForFault(faultTrack::location_t loc, uint32_t &faulted
         event_count[MEM_POST_FAULT_IDX]++;
         if(event_count[MEM_PRE_FAULT_IDX] == faultTime[MEM_POST_FAULT_IDX]) {return true;}
         break;
-    case WB_FAULT:
+
+#define STD_F_CASE(STR) \
+        case STR: \
+            newLoc = STR##_IDX;                 \
+            event_count[STR##_IDX]++;           \
+            if (reg_word::getNow() == faultTime[STR##_IDX]) {return true;} \
+            break;
+
+        STD_F_CASE(WB_FAULT);
+        STD_F_CASE(ALU_FAULT);
+        STD_F_CASE(MEM_BP_FAULT);
+        STD_F_CASE(CONTROL_FAULT); 
+        STD_F_CASE(INST_ADDR_FAULT);
+        STD_F_CASE(INST_TYPE_FAULT);
+        STD_F_CASE(WB_ADDR_FAULT); 
+
+#undef STD_F_CASE
+        
+        /*case WB_FAULT:
         newLoc = WB_FAULT_IDX;
         event_count[WB_FAULT_IDX]++;
         if (reg_word::getNow() == faultTime[WB_FAULT_IDX]) {return true;}
@@ -305,6 +333,11 @@ bool faultChecker_t::checkForFault(faultTrack::location_t loc, uint32_t &faulted
         event_count[ALU_FAULT_IDX]++;
         if (reg_word::getNow() == faultTime[ALU_FAULT_IDX]) {return true;}
         break;
+    case MEM_BP_FAULT:
+        newLoc = MEM_BP_FAULT_IDX;
+        event_count[MEM_BP_FAULT_IDX]++;
+        if (reg_word::getNow() == faultTime[MEM_BP_IDX]) {return true;}
+        break;*/
     default:
         printf("Unknown fault location\n");
     }
@@ -417,6 +450,51 @@ void faultChecker_t::checkAndInject_ALU(reg_word &data) {
     } 
 }
 
+void faultChecker_t::checkAndInject_MEM_BP_FAULT(reg_word &data) {
+    uint32_t flippedBits = 0;
+    if(checkForFault(MEM_BP_FAULT, flippedBits)) {
+        printf("INJECTING MEM_BP Fault  @ %lld\n", reg_word::getNow());
+        data.addFault(getFault(MEM_BP_FAULT, flippedBits));
+    }
+}
+
+void faultChecker_t::checkAndInject_CONTROL_FAULT(reg_word &data) {
+    out->fatal(CALL_INFO,-1, "Control Fault\n");
+}
+
+void faultChecker_t::checkAndInject_INST_ADDR_FAULT(reg_word &data) {
+    uint32_t flippedBits = 0;
+    if(checkForFault(INST_ADDR_FAULT, flippedBits)) {
+        printf("INJECTING INST_ADDR Fault  @ %lld\n", reg_word::getNow());
+        data.addFault(getFault(INST_ADDR_FAULT, flippedBits));
+    }
+}
+
+void faultChecker_t::checkAndInject_INST_TYPE_FAULT(pipe_stage *ps_ptr) {
+    uint32_t flippedBits = 0;
+    char buf[128];
+    if(checkForFault(INST_TYPE_FAULT, flippedBits)) {
+        printf("INJECTING INST_TYPE Fault  @ %lld\n", reg_word::getNow());
+        MIPS4KC::print_inst_internal(buf,128,ps_ptr->inst,
+                                     STAGE_PC(ps_ptr).getData());
+        printf(" Changing %s ", buf);
+        // get the old instruction encoding
+        unsigned long encoding = ps_ptr->inst->encoding;
+        // permute it
+        encoding ^= flippedBits;
+        // reencode
+        instruction *newInst = MIPS4KC::inst_decode(encoding);
+        MIPS4KC::print_inst_internal(buf,128,newInst,
+                                     STAGE_PC(ps_ptr).getData());
+        newInst->faulted = 1;
+        printf("-> %s\n", buf);
+        // save it to pipe stage
+        ps_ptr->inst = newInst;
+    }
+}
+
+void faultChecker_t::checkAndInject_WB_ADDR_FAULT(reg_word &data) {
+}
 
 void faultChecker_t::printStats() {
     printf("Faultable Events:\n");
@@ -430,6 +508,11 @@ void faultChecker_t::printStats() {
     PF(MEM_POST_FAULT);
     PF(WB_FAULT);
     PF(ALU_FAULT);
+    PF(MEM_BP_FAULT);
+    PF(CONTROL_FAULT);
+    PF(INST_ADDR_FAULT);
+    PF(INST_TYPE_FAULT);
+    PF(WB_ADDR_FAULT);
 
 #undef PF
 

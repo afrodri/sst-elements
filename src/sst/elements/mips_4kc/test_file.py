@@ -5,7 +5,8 @@ from optparse import OptionParser
 # options
 op = OptionParser()
 op.add_option("-c", "--cacheSz", action="store", type="int", dest="cacheSz", default=4)
-op.add_option("-f", "--faultLoc", action="store", type="int", dest="faultLoc", default=0)
+op.add_option("-l", "--faultLoc", action="store", type="int", dest="faultLoc", default=0)
+op.add_option("-f", "--faultFile", action="store", type="string", dest="faultFile", default="faultsFile.txt")
 op.add_option("-e", "--execFile", action="store", type="string", dest="execFile", default="test/matmat.out")
 
 op.add_option("-n", "--foo", action="store", type="string", dest="foo", default="test/matmat.out") #unused
@@ -81,7 +82,7 @@ comp_mips.addParams({
     "clock" : "1GHz",
     "fault_locations" : options.faultLoc,
     "fault_period" : faultPeriod,
-    "fault_file" : "faultsFile.txt", 
+    "fault_file" : options.faultFile, 
     "timeout" : 1000000
 })
 

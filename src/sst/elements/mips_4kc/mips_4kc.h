@@ -131,6 +131,10 @@ public:
     MIPS4KC(SST::ComponentId_t id, SST::Params& params);
     void finish();
 
+    // instruction handling (made public for fault handling)
+    static int print_inst_internal (char *buf, int len, instruction *inst, mem_addr addr);
+    static instruction *inst_decode (unsigned long int value);
+    
 protected:
     typedef Interfaces::SimpleMem::Request memReq;
 
@@ -145,7 +149,7 @@ protected:
     /* Util functions */
     //void add_breakpoint (mem_addr addr);
     //void delete_breakpoint (mem_addr addr);
-    void fatal_error (const char *fmt, ...);
+    static void fatal_error (const char *fmt, ...);
     int run_error (const char *fmt, ...);
     void error (const char *fmt, ...);
     void write_output (FILE*, const char *fmt, ...);
@@ -153,7 +157,7 @@ protected:
     void initialize_run_stack (int argc, char **argv);
     void initialize_world (int load_trap_handler);
     //void list_breakpoints (void);
-    inst_info *map_int_to_inst_info (vector<inst_info> &tbl, int num);
+    static inst_info *map_int_to_inst_info (vector<inst_info> &tbl, int num);
     inst_info *map_string_to_inst_info (inst_info tbl[], int tbl_len, char *id);
     //int read_assembly_file (char *name);
     int run_program (mem_addr pc, int steps, int display, int cont_bkpt);
@@ -161,7 +165,7 @@ protected:
     char *str_copy (char *str);
     void write_startup_message (void);
     void *xmalloc (int);
-    void *zmalloc (int);
+    static void *zmalloc (int);
     int read_aout_file (const char *file_name);
 
     mem_addr copy_int_to_stack (int n);
@@ -182,14 +186,14 @@ protected:
     instruction *break_inst;
     int program_break;	/* Last address in data segment (edata) */
     /* tble mapping from opcode to instruction tye */
-    int sorted_name_table = 0;	/* Non-zero => table sorted */
+    static int sorted_name_table;	/* Non-zero => table sorted */
     /* Map between a SPIM instruction and the binary representation of
    the instruction. */
-    int sorted_i_opcode_table = 0; /* Non-zero => table sorted */
+    static int sorted_i_opcode_table; /* Non-zero => table sorted */
     /* Maintain a table mapping from actual opcode to interal opcode.
        Table must be sorted before first use since its entries are
        alphabetical on name, not ordered by opcode. */
-    int sorted_a_opcode_table = 0; /* Non-zero => table sorted */
+    static int sorted_a_opcode_table; /* Non-zero => table sorted */
 
     /* syscall stuff */
     int do_syscall (void);
@@ -285,14 +289,14 @@ protected:
     /*void i_type_inst_full_word (int opcode, int rt, int rs, imm_expr *expr,
       int value_known, long int value);*/
     void inst_cmp (instruction *inst1, instruction *inst2);
-    instruction *make_r_type_inst (int opcode, int rd, int rs, int rt);
-    instruction *mk_i_inst (unsigned long value, int opcode, int rs,
+    static instruction *make_r_type_inst (int opcode, int rd, int rs, int rt);
+    static instruction *mk_i_inst (unsigned long value, int opcode, int rs,
                             int rt, int offset);
-    instruction *mk_j_inst (unsigned long value, int opcode, int target);
-    instruction *mk_r_inst (unsigned long value, int opcode, int rs,
+    static instruction *mk_j_inst (unsigned long value, int opcode, int target);
+    static instruction *mk_r_inst (unsigned long value, int opcode, int rs,
                             int rt, int rd, int shamt);
-    int print_imm_expr (char *buf, imm_expr *expr, int base_reg);
-    void sort_name_table (void);
+    static int print_imm_expr (char *buf, imm_expr *expr, int base_reg);
+    static void sort_name_table (void);
     imm_expr *addr_expr_imm (addr_expr *expr);
     int addr_expr_reg (addr_expr *expr);
     //imm_expr *const_imm_expr (long int value);
@@ -303,20 +307,18 @@ protected:
     //void i_type_inst (int opcode, int rt, int rs, imm_expr *expr);
     //void i_type_inst_free (int opcode, int rt, int rs, imm_expr *expr);
     //imm_expr *incr_expr_offset (imm_expr *expr, long int value);
-    instruction *inst_decode (unsigned long int value);
-    void sort_i_opcode_table (void);
-    void sort_a_opcode_table (void);
-    long inst_encode (instruction *inst);
+    static void sort_i_opcode_table (void);
+    static void sort_a_opcode_table (void);
+    static long inst_encode (instruction *inst);
     int inst_is_breakpoint (mem_addr addr);
     //void j_type_inst (int opcode, imm_expr *target);
     //imm_expr *lower_bits_of_expr (imm_expr *old_expr);
     //addr_expr *make_addr_expr (long int offs, char *sym, int reg_no);
     //imm_expr *make_imm_expr (int offs, char *sym, int pc_rel);
-    int opcode_is_branch (int opcode);
-    int opcode_is_jump (int opcode);
-    int opcode_is_load_store (int opcode);
+    static int opcode_is_branch (int opcode);
+    static int opcode_is_jump (int opcode);
+    static int opcode_is_load_store (int opcode);
     void print_inst (mem_addr addr);
-    int print_inst_internal (char *buf, int len, instruction *inst, mem_addr addr);
     instruction *set_breakpoint (mem_addr addr);
     void store_instruction (instruction *inst, const mem_addr addr);
     void text_begins_at_point (mem_addr addr);

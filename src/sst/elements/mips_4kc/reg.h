@@ -43,6 +43,8 @@ namespace faultTrack {
                   WRITE_DATA_ERROR,
 
                   WB_ERROR, // we write a fauled value to the RF
+                  INST_ERROR, // we executed & wrote back an incorrect
+                              // instruction
 
                   LAST_FAULT_STATUS
     } faultStatus_t;
@@ -70,8 +72,16 @@ namespace faultTrack {
                                // output of the memory stage
         WB_FAULT = 0x20, //Writeback: at a random cycle, flip a random
                          //bit in a random value being written back
-        ALU_FAULT = 0x40 // non-mult/div ALU error: at random cycle,
-                         // fault ALU output
+        ALU_FAULT = 0x40, // non-mult/div ALU error: at random cycle,
+                          // fault ALU output
+        MEM_BP_FAULT = 0x80, // fault in memory bypass. flip random
+                             // bit(s) in bypass value
+        CONTROL_FAULT = 0x100, // control or exception fault - crash for now
+        INST_ADDR_FAULT = 0x200, // Flip random bit(s) in fetched
+                                     // instruction address
+        INST_TYPE_FAULT = 0x400, // Flip random bit(s) in
+                                     // instruction before decdoe
+        WB_ADDR_FAULT = 0x800 // writeback correct data to wrong register
     } location_t; 
 }
 
@@ -215,6 +225,15 @@ public:
         }
     }
 
+    static void countINSTFaults(const reg_word &pc, const bool instF) {
+        // If the pc.data is corrupted, it was loaded from the wrong
+        // location (INST_ADDR_FAULT). If the instF is true, then the
+        // decode was corrupted (INST_TYPE_FAULT)
+        if (pc.data != pc.origData || instF) {
+            faultStats[faultTrack::INST_ERROR]++;
+        }
+    }
+
     // print stats at end
     static void printStats() {
         printf("Fault Stats:\n");
@@ -228,6 +247,7 @@ public:
         PF(READ_ADDR_ERROR);
         PF(READ_DATA_ERROR);
         PF(WB_ERROR);
+        PF(INST_ERROR);
         PF(WRITE_ADDR_ERROR);
         PF(WRITE_DATA_ERROR);
 

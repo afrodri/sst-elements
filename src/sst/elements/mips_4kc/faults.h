@@ -29,6 +29,9 @@ using namespace std;
 namespace SST {
 namespace MIPS4KCComponent {
 
+    // forward declaration
+    struct pipe_stage;
+    
     // Object to check if we should inject a fault
     class faultChecker_t {
         typedef enum {
@@ -40,6 +43,11 @@ namespace MIPS4KCComponent {
             MEM_POST_FAULT_IDX,
             WB_FAULT_IDX,
             ALU_FAULT_IDX,
+            MEM_BP_FAULT_IDX,
+            CONTROL_FAULT_IDX,
+            INST_ADDR_FAULT_IDX,
+            INST_TYPE_FAULT_IDX,
+            WB_ADDR_FAULT_IDX,
             LAST_FAULT_IDX
         } location_idx_t; 
         static const std::map<std::string, location_idx_t> parseMap;
@@ -105,6 +113,12 @@ namespace MIPS4KCComponent {
         void checkAndInject_MEM_POST(reg_word &data);
         void checkAndInject_WB(reg_word &data);
         void checkAndInject_ALU(reg_word &data);
+
+        void checkAndInject_MEM_BP_FAULT(reg_word &data);
+        void checkAndInject_CONTROL_FAULT(reg_word &data);
+        void checkAndInject_INST_ADDR_FAULT(reg_word &data);
+        void checkAndInject_INST_TYPE_FAULT(pipe_stage *ps);
+        void checkAndInject_WB_ADDR_FAULT(reg_word &data);
 
         void printStats();
     };
