@@ -42,7 +42,16 @@ namespace faultTrack {
                   WRITE_ADDR_ERROR, // caused a write address to be wrong
                   WRITE_DATA_ERROR,
 
-                  WB_ERROR, // we write a fauled value to the RF
+                  WB_ERROR, // we write a faulted value to the RF
+                  WB_ADDR_ERROR, // when we write a value back to the
+                                 // wrong place in the RF the
+                                 // wrongly-written is counted as a
+                                 // FAULTED, the register which was
+                                 // NOT written is a WB_ADDR_ERROR
+                  WB_ADDR_NO_ERROR, // when we write a value back to
+                                    // the wrong place, but the
+                                    // unwritten value is not wrong,
+                                    // we record this
                   INST_ERROR, // we executed & wrote back an incorrect
                               // instruction
 
@@ -247,6 +256,8 @@ public:
         PF(READ_ADDR_ERROR);
         PF(READ_DATA_ERROR);
         PF(WB_ERROR);
+        PF(WB_ADDR_ERROR);
+        PF(WB_ADDR_NO_ERROR);
         PF(INST_ERROR);
         PF(WRITE_ADDR_ERROR);
         PF(WRITE_DATA_ERROR);
@@ -670,6 +681,34 @@ public:
         faults.push_back(f);
         faultStats[f.status]++;
     }
+
+    // overwrite. Used for WB_ADDR faults - the data (may) be correct,
+    // but it was written to the wrong place.
+    void addOverwriteFault(faultDesc f, const reg_word &val) {
+        data = val.getData();
+       
+        f.when = now;
+        faults.push_back(f);
+        if (data != origData) {
+            faultStats[f.status]++;
+        }
+    }
+
+    // note that this value was NOT written when it should have been
+    // (i.e. WB_ADDR error)
+    void noteNotWritten(faultDesc f, const reg_word &shouldBe) {
+        origData = shouldBe.origData;
+
+        if (data != origData) {
+            f.when = now;
+            faults.push_back(f);
+            faultStats[faultTrack::WB_ADDR_ERROR]++; // record differently?
+        } else {
+            faultStats[faultTrack::WB_ADDR_NO_ERROR]++; // record differently?
+            printf(" Noting Written, but data is correct (0x%x)\n", origData);
+        }
+    }
+    
     void correct_tmr() {
         using namespace faultTrack;
         if (!faults.empty()) {

@@ -493,7 +493,32 @@ void faultChecker_t::checkAndInject_INST_TYPE_FAULT(pipe_stage *ps_ptr) {
     }
 }
 
-void faultChecker_t::checkAndInject_WB_ADDR_FAULT(reg_word &data) {
+// take in the register file, index to be written, and the value.
+// Check for faults and perform the writeback.
+void faultChecker_t::checkAndInject_WB_ADDR_FAULT(reg_word (&R)[32],
+                                                  const uint origIdx,
+                                                  const reg_word &value){
+    uint useIdx  = origIdx;
+    uint32_t flippedBits = 0;
+    if(checkForFault(WB_ADDR_FAULT, flippedBits)) {
+        // find (wrong) destination to write to
+        useIdx ^= flippedBits;
+        useIdx &= 0x1f; // ignore anything over 31
+
+        faultDesc f = getFault(WB_ADDR_FAULT, flippedBits);
+
+        printf("INJECTING WB_ADDR Fault (r[%u] instead of r[%u]) @ %lld\n",
+               useIdx, origIdx, reg_word::getNow());
+        
+        if (useIdx != 0) {
+            // write back to wrong place and mark as wrong
+            R[useIdx].addOverwriteFault(f, value);
+        }
+        // mark the place that _should_ have been written back is wrong
+        R[origIdx].noteNotWritten(f,value);
+    } else {
+        R[useIdx] = value;
+    }
 }
 
 void faultChecker_t::printStats() {

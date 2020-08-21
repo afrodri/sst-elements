@@ -118,7 +118,7 @@ namespace MIPS4KCComponent {
         void checkAndInject_CONTROL_FAULT(reg_word &data);
         void checkAndInject_INST_ADDR_FAULT(reg_word &data);
         void checkAndInject_INST_TYPE_FAULT(pipe_stage *ps);
-        void checkAndInject_WB_ADDR_FAULT(reg_word &data);
+        void checkAndInject_WB_ADDR_FAULT(reg_word (&R)[32], uint idx, const reg_word &value);
 
         void printStats();
     };

@@ -2159,7 +2159,8 @@ int MIPS4KC::process_WB (PIPE_STAGE ps)
     case Y_SRLV_OP:  case Y_SRL_OP:   case Y_SRAV_OP: case Y_SRA_OP:
     case Y_SLTU_OP:  case Y_SLT_OP:   case Y_SLLV_OP: case Y_SLL_OP:
     case Y_SUBU_OP:  case Y_SUB_OP:   case Y_XOR_OP:
-      R[RD (inst)] = value;
+        //R[RD (inst)] = value;
+        faultChecker.checkAndInject_WB_ADDR_FAULT(R,RD(inst),value);
       break;
 
     case Y_ADDI_OP:  case Y_ADDIU_OP:  case Y_ANDI_OP:  case Y_CFC0_OP:
@@ -2168,8 +2169,8 @@ int MIPS4KC::process_WB (PIPE_STAGE ps)
     case Y_LW_OP:    case Y_LWL_OP:    case Y_LWR_OP:   case Y_MFC0_OP:
     case Y_MFC2_OP:  case Y_MFC3_OP:   case Y_ORI_OP:   case Y_SLTI_OP:
     case Y_SLTIU_OP: case Y_XORI_OP:
-
-      R[RT (inst)] = value;
+        //R[RT (inst)] = value;
+        faultChecker.checkAndInject_WB_ADDR_FAULT(R,RT(inst),value);
       break;
 
     case Y_MFC1_OP:
@@ -2178,7 +2179,8 @@ int MIPS4KC::process_WB (PIPE_STAGE ps)
       { float val = FGR [RD (inst)]; /* RD not FS */
 	reg_word *vp = (reg_word *) &val;
 
-	R[RT (inst)] = *vp;	/* Fool coercion */
+	//R[RT (inst)] = *vp;	/* Fool coercion */
+        faultChecker.checkAndInject_WB_ADDR_FAULT(R,RT(inst),*vp);
 	break;
       }
 
@@ -2198,8 +2200,10 @@ int MIPS4KC::process_WB (PIPE_STAGE ps)
       break;
 
     case Y_BGEZAL_OP: case Y_BLTZAL_OP: case Y_JAL_OP:
-      if (!DSLOT (ps))
-	R[31] = value;
+        if (!DSLOT (ps)) {
+            //R[31] = value;
+            faultChecker.checkAndInject_WB_ADDR_FAULT(R,31,value);
+        }
       break;
 
     case Y_BREAK_OP:
@@ -2207,13 +2211,15 @@ int MIPS4KC::process_WB (PIPE_STAGE ps)
 
     case Y_COP0_OP: case Y_COP1_OP:
     case Y_COP2_OP: case Y_COP3_OP:
-      CCR [OPCODE (inst) - Y_COP0_OP] [RD (inst)] = value;
+        //CCR [OPCODE (inst) - Y_COP0_OP] [RD (inst)] = value;
+        faultChecker.checkAndInject_WB_ADDR_FAULT(CCR[OPCODE (inst) - Y_COP0_OP],RD(inst),value);
       break;
 
     case Y_CTC0_OP:
     case Y_CTC2_OP:
     case Y_CTC3_OP:
-      CCR [OPCODE (inst) - Y_CTC0_OP] [RD (inst)] = value;
+        //CCR [OPCODE (inst) - Y_CTC0_OP] [RD (inst)] = value;
+        faultChecker.checkAndInject_WB_ADDR_FAULT(CCR [OPCODE (inst) - Y_CTC0_OP],RD(inst),value);
       break;
 
     case Y_DIV_OP:
@@ -2229,13 +2235,15 @@ int MIPS4KC::process_WB (PIPE_STAGE ps)
     case Y_LWC0_OP:
     case Y_LWC2_OP:
     case Y_LWC3_OP:
-      CPR [OPCODE (inst) - Y_LWC0_OP] [RT (inst)] = value;
+        //CPR [OPCODE (inst) - Y_LWC0_OP] [RT (inst)] = value;
+        faultChecker.checkAndInject_WB_ADDR_FAULT(CCR[OPCODE (inst) - Y_LWC0_OP],RT(inst),value);
       break;
 
     case Y_MTC0_OP:
     case Y_MTC2_OP:
     case Y_MTC3_OP:
-      CPR [OPCODE (inst) - Y_MTC0_OP] [RD (inst)] = value;
+        //CPR [OPCODE (inst) - Y_MTC0_OP] [RD (inst)] = value;
+        faultChecker.checkAndInject_WB_ADDR_FAULT(CCR[OPCODE (inst) - Y_MTC0_OP],RD(inst),value);
       break;
 
 
