@@ -2304,6 +2304,12 @@ void MIPS4KC::stage_dealloc (PIPE_STAGE ps)
   if (ps == NULL)
     return;
 
+  // faulted instructions are created for this pipe stage only (they
+  // are not in memory), so they should be freed
+  if (ps->inst->faulted) {
+      free_inst(ps->inst);
+  } 
+  
   if (head_pool == NULL) {
     head_pool = ps;
     ps->next = NULL;
