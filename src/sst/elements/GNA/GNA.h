@@ -87,6 +87,8 @@ private:
     GNA(const GNA&); // do not implement
     void operator=(const GNA&); // do not implement
     void init(unsigned int phase);
+    void wavyGraph();
+    void randomConnectivity();
 
     void handleEvent( SST::Interfaces::SimpleMem::Request * req );
     virtual bool clockTic( SST::Cycle_t );

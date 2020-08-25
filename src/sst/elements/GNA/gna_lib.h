@@ -12,7 +12,7 @@
  This file is part of the SST software package. For license
  information, see the LICENSE file in the top level directory of the
  distribution.
-
+  
 ******************************************************************************/
 
 /******************************************************************************
@@ -23,7 +23,7 @@
 
  Description: STPU/GNA User API Library
 
- Special Req:
+ Special Req: 
 
  Notes      : All signals ending with _n are active low.
 
@@ -66,7 +66,7 @@ namespace Ctx_Seq_Mem_Types {
   // Context Sequence Entry (CSE) Format
   typedef struct {
     int      CtxNum; // Context Number
-    uint32_t LifCnt; // LIF Count
+    uint32_t LifCnt; // LIF Count 
   } T_Cse;
 
 } // Ctx_Seq_Mem_Types

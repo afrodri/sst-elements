@@ -90,7 +90,7 @@ GNA::GNA(ComponentId_t id, Params& params) :
     memory = loadUserSubComponent<Interfaces::SimpleMem>("memory", ComponentInfo::SHARE_NONE, clockTC, new Interfaces::SimpleMem::Handler<GNA>(this, &GNA::handleEvent));
     if (!memory) {
         params.insert("port", "mem_link");
-        memory = loadAnonymousSubComponent<Interfaces::SimpleMem>("memHierarchy.memInterface", "memory", 0,
+        memory = loadAnonymousSubComponent<Interfaces::SimpleMem>("memHierarchy.memInterface", "memory", 0, 
                 ComponentInfo::SHARE_PORTS, params, clockTC, new Interfaces::SimpleMem::Handler<GNA>(this, &GNA::handleEvent));
     }
     if (!memory)
@@ -177,7 +177,7 @@ void GNA::randomConnectivity() {
         countLinks += numCon;
         neurons[n].setWML(startAddr,numCon);
         uint64_t reqAddr = startAddr; //+nn*sizeof(T_Wme);
-        SimpleMem::Request *req = 
+        SimpleMem::Request *req =
             new SimpleMem::Request(SimpleMem::Request::Write, reqAddr,
                                    sizeof(T_Wme)*numCon);
         req->data.resize(sizeof(T_Wme)*numCon);
@@ -213,20 +213,6 @@ void GNA::wavyGraph() {
     
 
     // neurons
-#if 0
-    for (int nrn_num=0;nrn_num<=8;nrn_num++)
-        neurons[nrn_num].configure((T_NctFl){1000,-2.0,0.0});
-    for (int nrn_num=9;nrn_num<=11;nrn_num++)
-        neurons[nrn_num].configure((T_NctFl){ 750,-2.0,0.0});
-    for (int nrn_num=12;nrn_num<=12;nrn_num++)
-        neurons[nrn_num].configure((T_NctFl){1000,-2.0,0.0});
-    for (int nrn_num=13;nrn_num<=15;nrn_num++)
-        neurons[nrn_num].configure((T_NctFl){ 750,-2.0,0.0});
-    for (int nrn_num=16;nrn_num<=23;nrn_num++)
-        neurons[nrn_num].configure((T_NctFl){ 500,-2.0,0.0});
-    for (int nrn_num=24;nrn_num<=31;nrn_num++)
-        neurons[nrn_num].configure((T_NctFl){1500,-2.0,0.0});
-#else
     for (int nrn_num=0;nrn_num<numNeurons;nrn_num++) {
         uint16_t trig = rng.generateNextUInt32() % 100 + 350;
         neurons[nrn_num]
