@@ -1,8 +1,8 @@
-// Copyright 2009-2019 NTESS. Under the terms
+// Copyright 2009-2020 NTESS. Under the terms
 // of Contract DE-NA0003525 with NTESS, the U.S.
 // Government retains certain rights in this software.
 //
-// Copyright (c) 2009-2019, NTESS
+// Copyright (c) 2009-2020, NTESS
 // All rights reserved.
 //
 // Portions are copyright of other developers:
@@ -24,22 +24,20 @@ static void test(void* a, void* b, int* len, PayloadDataType* ) {
 	printf("%s() len=%d\n",__func__,*len);
 }
 
-EmberAllreduceGenerator::EmberAllreduceGenerator(SST::Component* owner,
+EmberAllreduceGenerator::EmberAllreduceGenerator(SST::ComponentId_t id,
                                             Params& params) :
-	EmberMessagePassingGenerator(owner, params, "Allreduce"),
+	EmberMessagePassingGenerator(id, params, "Allreduce"),
     m_loopIndex(0)
 {
-	m_dataMode = Backing;
+
 	m_iterations = (uint32_t) params.find("arg.iterations", 1);
 	m_compute    = (uint32_t) params.find("arg.compute", 0);
 	m_count      = (uint32_t) params.find("arg.count", 1);
 	if ( params.find<bool>("arg.doUserFunc", false )  )   {
 		m_op = op_create( test, 0 );
 	} else {
-		m_op = MP::SUM;
-	}	
-	m_sendBuf = memAlloc(sizeofDataType(DOUBLE));
-	m_recvBuf = memAlloc(sizeofDataType(DOUBLE));
+		m_op = Hermes::MP::SUM;
+	}
 }
 
 bool EmberAllreduceGenerator::generate( std::queue<EmberEvent*>& evQ) {
@@ -54,6 +52,9 @@ bool EmberAllreduceGenerator::generate( std::queue<EmberEvent*>& evQ) {
         return true;
     }
     if ( 0 == m_loopIndex ) {
+		memSetBacked();
+		m_sendBuf = memAlloc(sizeofDataType(DOUBLE)*m_count);
+		m_recvBuf = memAlloc(sizeofDataType(DOUBLE)*m_count);
         enQ_getTime( evQ, &m_startTime );
     }
 

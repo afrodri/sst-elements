@@ -1,8 +1,8 @@
-// Copyright 2009-2019 NTESS. Under the terms
+// Copyright 2009-2020 NTESS. Under the terms
 // of Contract DE-NA0003525 with NTESS, the U.S.
 // Government retains certain rights in this software.
 // 
-// Copyright (c) 2009-2019, NTESS
+// Copyright (c) 2009-2020, NTESS
 // All rights reserved.
 // 
 // Portions are copyright of other developers:
@@ -59,21 +59,22 @@ topo_fattree::parseShape(const std::string &shape, int *downs, int *ups) const
     }
 }
 
-topo_fattree::topo_fattree(Component* comp, Params& params) :
-    Topology(comp),
+
+topo_fattree::topo_fattree(ComponentId_t cid, Params& params, int num_ports, int rtr_id) :
+    Topology(cid),
+    id(rtr_id),
+    num_ports(num_ports),
     num_vcs(-1),
     allow_adaptive(false)
 {
-    num_ports = params.find<int>("num_ports");
-    string shape = params.find<std::string>("fattree:shape");
-    id = params.find<int>("id");
+    string shape = params.find<std::string>("shape");
 
-    string routing_alg = params.find<std::string>("fattree:routing_alg", "deterministic");
+    string routing_alg = params.find<std::string>("routing_alg", "deterministic");
     if ( routing_alg == "adaptive" ) {
         allow_adaptive = true;
     }
 
-    adaptive_threshold = params.find<double>("fattree:adaptive_threshold", 0.5);
+    adaptive_threshold = params.find<double>("adaptive_threshold", 0.5);
     // std::cout << "routing_alg: " << routing_alg << std::endl;
     // std::cout << "adaptive_threshold: " << adaptive_threshold << std::endl;
     
@@ -217,7 +218,7 @@ void topo_fattree::reroute(int port, int vc, internal_router_event* ev)
 internal_router_event* topo_fattree::process_input(RtrEvent* ev)
 {
     internal_router_event* ire = new internal_router_event(ev);
-    ire->setVC(ev->request->vn);
+    ire->setVC(ire->getVN());
     return ire;
 }
 

@@ -1,8 +1,8 @@
-// Copyright 2009-2019 NTESS. Under the terms
+// Copyright 2009-2020 NTESS. Under the terms
 // of Contract DE-NA0003525 with NTESS, the U.S.
 // Government retains certain rights in this software.
 //
-// Copyright (c) 2009-2019, NTESS
+// Copyright (c) 2009-2020, NTESS
 // All rights reserved.
 //
 // Portions are copyright of other developers:
@@ -28,7 +28,7 @@
 // limitations under the License.
 
 //SST includes
-#include "sst_config.h"
+#include <sst_config.h>
 
 // global includes
 #include <assert.h>
@@ -39,7 +39,7 @@
 #include "c_BankGroup.hpp"
 
 using namespace SST;
-using namespace SST::n_Bank;
+using namespace SST::CramSim;
 
 c_Rank::c_Rank(std::map<std::string, unsigned>* x_bankParams) {
 	m_channelPtr = nullptr;

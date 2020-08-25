@@ -1,8 +1,8 @@
-// Copyright 2009-2019 NTESS. Under the terms
+// Copyright 2009-2020 NTESS. Under the terms
 // of Contract DE-NA0003525 with NTESS, the U.S.
 // Government retains certain rights in this software.
 //
-// Copyright (c) 2009-2019, NTESS
+// Copyright (c) 2009-2020, NTESS
 // All rights reserved.
 //
 // Portions are copyright of other developers:
@@ -24,9 +24,8 @@ class ShmemStream : public StreamBase {
   protected:
     void processFirstPkt( FireflyNetworkEvent* ev ) {
         m_dbg.debug(CALL_INFO,1,NIC_DBG_RECV_STREAM,"\n");
+        processPktHdr(ev);
         m_blocked = false;
-        m_ctx->schedCallback( m_wakeupCallback );
-        m_wakeupCallback = NULL;
     }
     void processPktHdr( FireflyNetworkEvent* ev ) {
         m_dbg.debug(CALL_INFO,1,NIC_DBG_RECV_STREAM,"\n");

@@ -38,43 +38,57 @@ libember_la_SOURCES = \
 	libs/misc.h \
 	libs/miscEvents/emberGetNodeNumEvent.h \
 	libs/miscEvents/emberGetNumNodesEvent.h \
+	libs/miscEvents/emberMallocEvent.h \
 	libs/miscEvents/emberMiscEvent.h \
-	mpi/embercancelev.h \
+	libs/emberMpiLib.h \
+	libs/emberMpiLib.cc \
+	libs/mpi/emberscatterev.h \
+	libs/mpi/emberscattervev.h \
+	libs/mpi/embercancelev.h \
+	libs/mpi/emberrecvev.h \
+	libs/mpi/embersendev.h \
+	libs/mpi/emberfinalizeev.h \
+	libs/mpi/emberinitev.h \
+	libs/mpi/embertestanyev.h \
+	libs/mpi/embertestev.h \
+	libs/mpi/emberwaitev.h \
+	libs/mpi/emberwaitanyev.h \
+	libs/mpi/emberwaitallev.h \
+	libs/mpi/emberirecvev.h \
+	libs/mpi/emberisendev.h \
+	libs/mpi/emberbarrierev.h \
+	libs/mpi/emberallredev.h \
+	libs/mpi/emberalltoallvev.h \
+	libs/mpi/emberalltoallev.h \
+	libs/mpi/emberallgathervev.h \
+	libs/mpi/emberallgatherev.h \
+	libs/mpi/emberredev.h \
+	libs/mpi/emberbcastev.h \
+	libs/mpi/emberMPIEvent.h \
+	libs/mpi/emberrankev.h \
+	libs/mpi/embersizeev.h \
+	libs/mpi/embermakeprogressev.h \
+	libs/mpi/emberCommCreateEv.h \
+	libs/mpi/emberCommDestroyEv.h \
+	libs/mpi/emberCommSplitEv.h \
 	mpi/embermpigen.h \
 	mpi/embermpigen.cc \
-	mpi/emberrecvev.h \
-	mpi/embersendev.h \
-	mpi/emberfinalizeev.h \
-	mpi/emberinitev.h \
-	mpi/embertestanyev.h \
-	mpi/embertestev.h \
-	mpi/emberwaitev.h \
-	mpi/emberwaitanyev.h \
-	mpi/emberwaitallev.h \
-	mpi/emberirecvev.h \
-	mpi/emberisendev.h \
-	mpi/emberbarrierev.h \
-	mpi/emberallredev.h \
-	mpi/emberalltoallvev.h \
-	mpi/emberalltoallev.h \
-	mpi/emberredev.h \
-	mpi/emberbcastev.h \
-	mpi/emberMPIEvent.h \
-	mpi/emberrankev.h \
-	mpi/embersizeev.h \
-	mpi/embermakeprogressev.h \
-	mpi/emberCommCreateEv.h \
-	mpi/emberCommDestroyEv.h \
-	mpi/emberCommSplitEv.h \
 	mpi/motifs/emberinit.h  \
+	mpi/motifs/emberinit.cc \
 	mpi/motifs/emberfini.h  \
+	mpi/motifs/emberfini.cc \
 	mpi/motifs/ember3dcommdbl.h \
 	mpi/motifs/ember3dcommdbl.cc \
 	mpi/motifs/embersendrecv.h  \
+	mpi/motifs/embersendrecv.cc  \
 	mpi/motifs/emberwaitany.h  \
+	mpi/motifs/emberwaitany.cc  \
 	mpi/motifs/embertest.h  \
+	mpi/motifs/embertest.cc  \
 	mpi/motifs/embertestany.h  \
+	mpi/motifs/embertestany.cc  \
 	mpi/motifs/embernull.h  \
+	mpi/motifs/embernull.cc  \
 	mpi/motifs/emberhalo1d.h  \
 	mpi/motifs/emberhalo1d.cc  \
 	mpi/motifs/emberhalo2d.h  \
@@ -102,6 +116,10 @@ libember_la_SOURCES = \
 	mpi/motifs/emberallpingpong.h \
 	mpi/motifs/emberallreduce.cc \
 	mpi/motifs/emberallreduce.h \
+	mpi/motifs/emberallgatherv.cc \
+	mpi/motifs/emberallgatherv.h \
+	mpi/motifs/emberallgather.cc \
+	mpi/motifs/emberallgather.h \
 	mpi/motifs/emberalltoall.cc \
 	mpi/motifs/emberalltoall.h \
 	mpi/motifs/emberalltoallv.cc \
@@ -109,6 +127,10 @@ libember_la_SOURCES = \
 	mpi/motifs/emberreduce.cc \
 	mpi/motifs/emberbcast.h \
 	mpi/motifs/emberbcast.cc \
+	mpi/motifs/emberscatter.h \
+	mpi/motifs/emberscatter.cc \
+	mpi/motifs/emberscatterv.h \
+	mpi/motifs/emberscatterv.cc \
 	mpi/motifs/emberreduce.h \
 	mpi/motifs/emberhalo3d.h \
 	mpi/motifs/emberhalo3d.cc \
@@ -118,6 +140,8 @@ libember_la_SOURCES = \
 	mpi/motifs/emberhalo3dsv.cc \
 	mpi/motifs/emberhalo3d26.h \
 	mpi/motifs/emberhalo3d26.cc \
+	mpi/motifs/emberincast.h \
+	mpi/motifs/emberincast.cc \
 	mpi/motifs/embersweep3d.h \
 	mpi/motifs/embersweep3d.cc \
 	mpi/motifs/embernaslu.h \
@@ -148,44 +172,46 @@ libember_la_SOURCES = \
 	mpi/motifs/embersiriustrace.cc \
 	mpi/motifs/emberrandomgen.h \
 	mpi/motifs/emberrandomgen.cc \
-	sirius/include/sirius/siriusglobals.h \
-	shmem/emberFamEvent.h \
-	shmem/emberFamAddEv.h \
-	shmem/emberFamCswapEv.h \
-	shmem/emberFamPut_Ev.h \
-	shmem/emberFamGet_Ev.h \
-	shmem/emberFamScatterv_Ev.h \
-	shmem/emberFamScatter_Ev.h \
-	shmem/emberFamGatherv_Ev.h \
-	shmem/emberFamGather_Ev.h \
-	shmem/emberShmemAddEv.h \
-	shmem/emberShmemAlltoallEv.h \
-	shmem/emberShmemAlltoallsEv.h \
-	shmem/emberShmemBarrierAllEv.h \
-	shmem/emberShmemBarrierEv.h \
-	shmem/emberShmemBroadcastEv.h \
-	shmem/emberShmemCollectEv.h \
-	shmem/emberShmemCswapEv.h \
-	shmem/emberShmemEvent.h \
-	shmem/emberShmemFaddEv.h \
-	shmem/emberShmemFcollectEv.h \
-	shmem/emberShmemFenceEv.h \
-	shmem/emberShmemFiniEv.h \
-	shmem/emberShmemFreeEv.h \
+	mpi/motifs/emberunstructured.h \
+	mpi/motifs/emberunstructured.cc \
+	libs/emberShmemLib.h \
+	libs/shmem/emberFamEvent.h \
+	libs/shmem/emberFamAddEv.h \
+	libs/shmem/emberFamCswapEv.h \
+	libs/shmem/emberFamPut_Ev.h \
+	libs/shmem/emberFamGet_Ev.h \
+	libs/shmem/emberFamScatterv_Ev.h \
+	libs/shmem/emberFamScatter_Ev.h \
+	libs/shmem/emberFamGatherv_Ev.h \
+	libs/shmem/emberFamGather_Ev.h \
+	libs/shmem/emberShmemAddEv.h \
+	libs/shmem/emberShmemAlltoallEv.h \
+	libs/shmem/emberShmemAlltoallsEv.h \
+	libs/shmem/emberShmemBarrierAllEv.h \
+	libs/shmem/emberShmemBarrierEv.h \
+	libs/shmem/emberShmemBroadcastEv.h \
+	libs/shmem/emberShmemCollectEv.h \
+	libs/shmem/emberShmemCswapEv.h \
+	libs/shmem/emberShmemEvent.h \
+	libs/shmem/emberShmemFaddEv.h \
+	libs/shmem/emberShmemFcollectEv.h \
+	libs/shmem/emberShmemFenceEv.h \
+	libs/shmem/emberShmemFiniEv.h \
+	libs/shmem/emberShmemFreeEv.h \
+	libs/shmem/emberShmemGetEv.h \
+	libs/shmem/emberShmemGetVEv.h \
+	libs/shmem/emberShmemInitEv.h \
+	libs/shmem/emberShmemMallocEv.h \
+	libs/shmem/emberShmemMyPeEv.h \
+	libs/shmem/emberShmemNPesEv.h \
+	libs/shmem/emberShmemPutEv.h \
+	libs/shmem/emberShmemPutVEv.h \
+	libs/shmem/emberShmemQuietEv.h \
+	libs/shmem/emberShmemReductionEv.h \
+	libs/shmem/emberShmemSwapEv.h \
+	libs/shmem/emberShmemWaitEv.h \
 	shmem/emberShmemGen.cc \
 	shmem/emberShmemGen.h \
-	shmem/emberShmemGetEv.h \
-	shmem/emberShmemGetVEv.h \
-	shmem/emberShmemInitEv.h \
-	shmem/emberShmemMallocEv.h \
-	shmem/emberShmemMyPeEv.h \
-	shmem/emberShmemNPesEv.h \
-	shmem/emberShmemPutEv.h \
-	shmem/emberShmemPutVEv.h \
-	shmem/emberShmemQuietEv.h \
-	shmem/emberShmemReductionEv.h \
-	shmem/emberShmemSwapEv.h \
-	shmem/emberShmemWaitEv.h \
 	shmem/motifs/emberShmemAdd.h \
 	shmem/motifs/emberShmemAlltoall.h \
 	shmem/motifs/emberShmemAlltoalls.h \
@@ -216,8 +242,9 @@ libember_la_SOURCES = \
 	shmem/motifs/emberShmemFAM_Gatherv.h \
 	shmem/motifs/emberShmemFAM_AtomicInc.h \
 	shmem/motifs/emberShmemFAM_Cswap.h \
-	mpi/motifs/emberunstructured.h \
-	mpi/motifs/emberunstructured.cc
+	sirius/include/sirius/siriusglobals.h \
+	pyember.py
+
 
 bin_PROGRAMS = sst-spygen sst-meshconvert
 
@@ -253,7 +280,16 @@ EXTRA_DIST = \
 	test/chamaOpenIBParams.py \
 	test/chamaPSMParams.py \
 	test/bgqParams.py \
-	test/runFAMloadfile
+	test/runFAMloadfile \
+	test/generateNidListQOS.py \
+	test/generateNidListRange.py \
+	test/generateNidListGroup.py \
+	test/generateNidListInterval.py \
+	test/generateNidListRandom.py \
+	tests/qos-dragonfly.sh \
+	tests/qos-fattree.sh \
+	tests/qos-hyperx.sh \
+	tests/qos.load
 
 if USE_EMBER_CONTEXTS
 libember_la_SOURCES += \
@@ -271,4 +307,24 @@ libember_la_LIBADD = \
 	$(OTF2_LIBS)
 
 endif
+
+install-exec-hook:
+	$(SST_REGISTER_TOOL) SST_ELEMENT_SOURCE     ember=$(abs_srcdir)
+	$(SST_REGISTER_TOOL) SST_ELEMENT_TESTS      ember=$(abs_srcdir)/tests
+
+BUILT_SOURCES = \
+	pyember.inc
+
+# This sed script converts 'od' output to a comma-separated list of byte-
+# values, suitable for #include'ing into an array definition.
+# This can be done much more simply with xxd or hexdump, but those tools
+# are not installed by default on all supported platforms.
+#
+# od:	-v:		Print all data
+#		-t x1:	Print as byte-values, in hex
+# sed:	Script 1:  Remove base-address column from od output
+# 		Script 2:  Remove trailing blank line resulting from script 1
+# 		Script 3:  Add '0x' prefix, and ',' suffix to each value
+%.inc: %.py
+	od -v -t x1 < $< | sed -e 's/^[^ ]*[ ]*//g' -e '/^\s*$$/d' -e 's/\([0-9a-f]*\)[ $$]*/0x\1,/g' > $@
 

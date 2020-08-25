@@ -1,8 +1,8 @@
-// Copyright 2013-2018 NTESS. Under the terms
+// Copyright 2013-2020 NTESS. Under the terms
 // of Contract DE-NA0003525 with NTESS, the U.S.
 // Government retains certain rights in this software.
 //
-// Copyright (c) 2013-2018, NTESS
+// Copyright (c) 2013-2020, NTESS
 // All rights reserved.
 //
 // Portions are copyright of other developers:
@@ -28,34 +28,36 @@ namespace Firefly {
 class HadesMisc : public Misc::Interface
 {
   public:
-  public:
-    SST_ELI_REGISTER_SUBCOMPONENT(
+    SST_ELI_REGISTER_SUBCOMPONENT_DERIVED(
         HadesMisc,
         "firefly",
         "hadesMisc",
         SST_ELI_ELEMENT_VERSION(1,0,0),
         "",
-        ""
+        SST::Hermes::Interface
     )
 
-    HadesMisc(Component* owner, Params&) : Interface(owner), m_os(NULL) {}
+    HadesMisc(ComponentId_t id, Params&) : Interface(id), m_os(NULL) {}
     ~HadesMisc() {}
 
     virtual void setup() {}
     virtual void finish() {}
     virtual std::string getName() { return "HadesMisc"; }
+	virtual std::string getType() { return "misc"; }
 
     virtual void setOS( OS* os ) {
         m_os = static_cast<Hades*>(os);
     }
-    void getNumNodes( int* ptr, Callback callback) { 
+    void getNumNodes( int* ptr, Callback* callback) {
         *ptr = m_os->getNumNodes();
-        callback(0);
+        (*callback)(0);
+		delete callback;
     }
 
-    void getNodeNum( int* ptr, Callback callback) { 
+    void getNodeNum( int* ptr, Callback* callback) {
         *ptr = m_os->getNodeNum();
-        callback(0);
+        (*callback)(0);
+		delete callback;
     }
   private:
     Hades*      m_os;

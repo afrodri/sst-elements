@@ -1,9 +1,9 @@
 
-// Copyright 2009-2019 NTESS. Under the terms
+// Copyright 2009-2020 NTESS. Under the terms
 // of Contract DE-NA0003525 with NTESS, the U.S.
 // Government retains certain rights in this software.
 //
-// Copyright (c) 2009-2019, NTESS
+// Copyright (c) 2009-2020, NTESS
 // All rights reserved.
 //
 // Portions are copyright of other developers:
@@ -28,7 +28,7 @@
 #include "c_Transaction.hpp"
 
 namespace SST {
-    namespace n_Bank {
+    namespace CramSim {
         class c_TxnGenBase: public SST::Component {
 
         public:
@@ -44,7 +44,7 @@ namespace SST {
             virtual void createTxn()=0;
             virtual void handleResEvent(SST::Event *ev); //handleEvent
             virtual bool sendRequest(); //send out txn req ptr to Transaction unit
-            virtual void readResponse(); //read from res q to output
+            virtual bool readResponse(); //read from res q to output
             virtual bool clockTic(SST::Cycle_t); //called every cycle
 
             //Simulation cycles
@@ -140,7 +140,7 @@ namespace SST {
             unsigned int k_randSeed;
         };
 
-    } // namespace n_Bank
+    } // namespace CramSim
 } // namespace SST
 
 #endif  /* _TXNGEN_H */

@@ -1,8 +1,8 @@
-// Copyright 2009-2019 NTESS. Under the terms
+// Copyright 2009-2020 NTESS. Under the terms
 // of Contract DE-NA0003525 with NTESS, the U.S.
 // Government retains certain rights in this software.
 //
-// Copyright (c) 2009-2019, NTESS
+// Copyright (c) 2009-2020, NTESS
 // All rights reserved.
 //
 // Portions are copyright of other developers:
@@ -20,15 +20,14 @@
 using namespace SST::Ember;
 
 #define TAG 0xDEADBEEF
+#define DATA_TYPE CHAR
 
-EmberRingGenerator::EmberRingGenerator(SST::Component* owner, Params& params) :
-	EmberMessagePassingGenerator(owner, params, "Ring"),
+EmberRingGenerator::EmberRingGenerator(SST::ComponentId_t id, Params& params) :
+	EmberMessagePassingGenerator(id, params, "Ring"),
     m_loopIndex(0)
 {
 	m_messageSize = (uint32_t) params.find("arg.messagesize", 1024);
 	m_iterations = (uint32_t) params.find("arg.iterations", 1);
-    m_sendBuf = memAlloc(m_messageSize);
-    m_recvBuf = memAlloc(m_messageSize);
 }
 
 inline long mod( long a, long b )
@@ -37,20 +36,21 @@ inline long mod( long a, long b )
     return tmp;
 }
 
-bool EmberRingGenerator::generate( std::queue<EmberEvent*>& evQ) 
+bool EmberRingGenerator::generate( std::queue<EmberEvent*>& evQ)
 {
    if ( m_loopIndex == m_iterations ) {
         if ( 0 == rank()) {
             double totalTime = (double)(m_stopTime - m_startTime)/1000000000.0;
 
+			size_t nBytes = m_messageSize * sizeofDataType(DATA_TYPE);
             double latency = ((totalTime/m_iterations)/size());
-            double bandwidth = (double) m_messageSize / latency;
+            double bandwidth = (double) nBytes / latency;
 
-            output("%s total time %.3f us, loop %d, bufLen %d"
-                    ", latency %.3f us. bandwidth %f GB/s\n", 
+            output("%s total time %.3f us, loop %d, bufLen %zu"
+                    ", latency %.3f us. bandwidth %f GB/s\n",
                                 getMotifName().c_str(),
                                 totalTime * 1000000.0, m_iterations,
-                                m_messageSize,
+								nBytes,
                                 latency * 1000000.0,
                                 bandwidth / 1000000000.0 );
         }
@@ -59,6 +59,8 @@ bool EmberRingGenerator::generate( std::queue<EmberEvent*>& evQ)
 
     if ( 0 == m_loopIndex ) {
         verbose( CALL_INFO, 1, 0, "rank=%d size=%d\n", rank(), size());
+    	m_sendBuf = memAlloc(m_messageSize * sizeofDataType(DATA_TYPE) );
+    	m_recvBuf = memAlloc(m_messageSize * sizeofDataType(DATA_TYPE) );
 
         if ( 0 == rank() ) {
             enQ_getTime( evQ, &m_startTime );
@@ -69,15 +71,21 @@ bool EmberRingGenerator::generate( std::queue<EmberEvent*>& evQ)
     int from = mod( (signed int) rank() - 1, size() );
     verbose( CALL_INFO, 2, 0, "to=%d from=%d\n",to,from);
 
+	if ( m_loopIndex ) {
+		int count;
+		get_count( &m_resp, CHAR, &count );
+		get_count( &m_resp, INT, &count );
+		get_count( &m_resp, LONG, &count );
+	}
     if ( 0 == rank() ) {
-        enQ_send( evQ, m_sendBuf, m_messageSize, CHAR, to, TAG,
+        enQ_send( evQ, m_sendBuf, m_messageSize, DATA_TYPE, to, TAG,
                                                 GroupWorld );
-	    enQ_recv( evQ, m_recvBuf, m_messageSize, CHAR, from, TAG, 
+	    enQ_recv( evQ, m_recvBuf, m_messageSize, DATA_TYPE, from, TAG,
                                                 GroupWorld, &m_resp );
     } else {
-	    enQ_recv( evQ, m_recvBuf, m_messageSize, CHAR, from, TAG, 
+	    enQ_recv( evQ, m_recvBuf, m_messageSize, DATA_TYPE, from, TAG,
                                                 GroupWorld, &m_resp );
-	   enQ_send( evQ, m_sendBuf, m_messageSize, CHAR, to, TAG,
+	    enQ_send( evQ, m_sendBuf, m_messageSize, DATA_TYPE, to, TAG,
                                                 GroupWorld );
     }
 

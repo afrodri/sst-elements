@@ -1,8 +1,8 @@
-// Copyright 2013-2018 NTESS. Under the terms
+// Copyright 2013-2020 NTESS. Under the terms
 // of Contract DE-NA0003525 with NTESS, the U.S.
 // Government retains certain rights in this software.
 //
-// Copyright (c) 2013-2018, NTESS
+// Copyright (c) 2013-2020, NTESS
 // All rights reserved.
 //
 // Portions are copyright of other developers:
@@ -26,7 +26,7 @@
 #include "sst/elements/thornhill/memoryHeapLink.h"
 #include "group.h"
 #include "info.h"
-#include "protocolAPI.h"
+#include "ctrlMsg.h"
 
 namespace SST {
 namespace Firefly {
@@ -35,16 +35,17 @@ class FunctionSM;
 class VirtNic;
 
 
-class Hades : public OS 
+class Hades : public OS
 {
   public:
-    SST_ELI_REGISTER_SUBCOMPONENT(
+
+    SST_ELI_REGISTER_SUBCOMPONENT_DERIVED(
         Hades,
         "firefly",
         "hades",
         SST_ELI_ELEMENT_VERSION(1,0,0),
         "",
-        ""
+       	SST::Hermes::OS
     )
 
     SST_ELI_DOCUMENT_PARAMS(
@@ -64,7 +65,7 @@ class Hades : public OS
         {"nodePerf", "Sets the node performance module ", "1"},
     )
 
-    Hades(Component*, Params&);
+    Hades(ComponentId_t id, Params& params);
     ~Hades();
     virtual void _componentInit(unsigned int phase );
     virtual void _componentSetup();
@@ -73,8 +74,8 @@ class Hades : public OS
     int getRank();
     int getNodeNum();
 
-    int sizeofDataType( MP::PayloadDataType type ) { 
-        return m_info.sizeofDataType(type); 
+    int sizeofDataType( MP::PayloadDataType type ) {
+        return m_info.sizeofDataType(type);
     }
 
     NodePerf* getNodePerf() {
@@ -93,7 +94,7 @@ class Hades : public OS
     Info*               getInfo() { return &m_info; }
     FunctionSM&         getFunctionSM() { return *m_functionSM; }
     ProtocolAPI&        getMsgStack() { return *m_proto; }
-    int                 getNumNodes() { return m_numNodes; } 
+    int                 getNumNodes() { return m_numNodes; }
 
   private:
 
@@ -113,7 +114,7 @@ class Hades : public OS
     int                                  m_numNodes;
 };
 
-} // namesapce Firefly 
+} // namesapce Firefly
 } // namespace SST
 
 #endif

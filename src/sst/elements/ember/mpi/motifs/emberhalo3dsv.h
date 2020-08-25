@@ -1,8 +1,8 @@
-// Copyright 2009-2019 NTESS. Under the terms
+// Copyright 2009-2020 NTESS. Under the terms
 // of Contract DE-NA0003525 with NTESS, the U.S.
 // Government retains certain rights in this software.
 //
-// Copyright (c) 2009-2019, NTESS
+// Copyright (c) 2009-2020, NTESS
 // All rights reserved.
 //
 // Portions are copyright of other developers:
@@ -25,13 +25,13 @@ namespace Ember {
 class EmberHalo3DSVGenerator : public EmberMessagePassingGenerator {
 
 public:
-    SST_ELI_REGISTER_SUBCOMPONENT(
+    SST_ELI_REGISTER_SUBCOMPONENT_DERIVED(
         EmberHalo3DSVGenerator,
         "ember",
         "Halo3DSVMotif",
         SST_ELI_ELEMENT_VERSION(1,0,0),
         "Performs a 3D blocking motif with single variable commmunication",
-        "SST::Ember::EmberGenerator"
+        SST::Ember::EmberGenerator
     )
 
     SST_ELI_DOCUMENT_PARAMS(
@@ -78,7 +78,7 @@ public:
 
 
 public:
-	EmberHalo3DSVGenerator(SST::Component* owner, Params& params);
+	EmberHalo3DSVGenerator(SST::ComponentId_t, Params& params);
 	~EmberHalo3DSVGenerator() {}
 	void configure();
     bool generate( std::queue<EmberEvent*>& evQ );

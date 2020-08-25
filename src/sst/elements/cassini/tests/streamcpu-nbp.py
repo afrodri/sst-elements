@@ -1,5 +1,7 @@
 import sst
 
+DEBUG_L1 = 0
+
 # Define SST core options
 sst.setProgramOption("timebase", "1ps")
 sst.setProgramOption("stopAtCycle", "0 ns")
@@ -29,7 +31,7 @@ comp_l1cache.addParams({
       "associativity" : "4",
       "cache_line_size" : "64",
       "prefetcher" : "cassini.NextBlockPrefetcher",
-      "debug" : "1",
+      "debug" : DEBUG_L1,
       "L1" : "1",
       "cache_size" : "8 KB"
 })
@@ -38,11 +40,11 @@ comp_l1cache.addParams({
 comp_l1cache.enableAllStatistics({"type":"sst.AccumulatorStatistic"})
 
 comp_memory = sst.Component("memory", "memHierarchy.MemController")
-comp_memory.addParams({
-      "coherence_protocol" : "MSI",
-      "backend.access_time" : "1000 ns",
-      "backend.mem_size" : "512MiB",
-      "clock" : "1GHz"
+comp_memory.addParams({ "clock" : "1GHz" })
+backend = comp_memory.setSubComponent("backend", "memHierarchy.simpleMem")
+backend.addParams({
+      "access_time" : "1000 ns",
+      "mem_size" : "512MiB",
 })
 
 

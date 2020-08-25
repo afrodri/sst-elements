@@ -1,8 +1,8 @@
-// Copyright 2009-2019 NTESS. Under the terms
+// Copyright 2009-2020 NTESS. Under the terms
 // of Contract DE-NA0003525 with NTESS, the U.S.
 // Government retains certain rights in this software.
 //
-// Copyright (c) 2009-2019, NTESS
+// Copyright (c) 2009-2020, NTESS
 // All rights reserved.
 //
 // Portions are copyright of other developers:
@@ -19,9 +19,9 @@
 
 using namespace SST::Ember;
 
-EmberHalo3D26Generator::EmberHalo3D26Generator(SST::Component* owner, Params& params) :
-	EmberMessagePassingGenerator(owner, params, "Halo3D26"),
-	m_loopIndex(0) 
+EmberHalo3D26Generator::EmberHalo3D26Generator(SST::ComponentId_t id, Params& params) :
+	EmberMessagePassingGenerator(id, params, "Halo3D26"),
+	m_loopIndex(0)
 {
 	nx  = (uint32_t) params.find("arg.nx", 100);
 	ny  = (uint32_t) params.find("arg.ny", 100);
@@ -108,7 +108,7 @@ EmberHalo3D26Generator::EmberHalo3D26Generator(SST::Component* owner, Params& pa
 
                                                 if(varNew <= varExisting) {
                                                         if(0 == rank()) {
-                                                                verbose(CALL_INFO, 2, 0, "Found an improved decomposition solution: %" PRIu32 " x %" PRIu32 " x %" PRIu32 "\n",
+                                                                verbose(CALL_INFO, 2, MOTIF_MASK, "Found an improved decomposition solution: %" PRIu32 " x %" PRIu32 " x %" PRIu32 "\n",
                                                                         i, j, k);
                                                         }
 
@@ -128,7 +128,7 @@ EmberHalo3D26Generator::EmberHalo3D26Generator(SST::Component* owner, Params& pa
 
 	}
 
-		
+
         if(0 == rank()) {
 		output("Halo3D processor decomposition solution: %" PRIu32 "x%" PRIu32 "x%" PRIu32 "\n", peX, peY, peZ);
 		output("Halo3D problem size: %" PRIu32 "x%" PRIu32 "x%" PRIu32 "\n", nx, ny, nz);
@@ -141,7 +141,7 @@ EmberHalo3D26Generator::EmberHalo3D26Generator(SST::Component* owner, Params& pa
 
 	assert( peX * peY * peZ == (unsigned) size() );
 
-	verbose(CALL_INFO, 2, 0, "Rank: %" PRIu32 ", using decomposition: %" PRIu32 "x%" PRIu32 "x%" PRIu32 ".\n",
+	verbose(CALL_INFO, 2, MOTIF_MASK, "Rank: %" PRIu32 ", using decomposition: %" PRIu32 "x%" PRIu32 "x%" PRIu32 ".\n",
 		rank(), peX, peY, peZ);
 
 	int32_t my_Z = 0;
@@ -213,26 +213,26 @@ EmberHalo3D26Generator::EmberHalo3D26Generator(SST::Component* owner, Params& pa
 	requestLength += (corner_g > -1) ? 1 : 0;
 	requestLength += (corner_h > -1) ? 1 : 0;
 
-	verbose(CALL_INFO, 2, 0, "Rank: %" PRIu32 ", World=%" PRId32 ", X=%" PRId32 ", Y=%" PRId32 ", Z=%" PRId32 ", Px=%" PRId32 ", Py=%" PRId32 ", Pz=%" PRId32 "\n", 
+	verbose(CALL_INFO, 2, MOTIF_MASK, "Rank: %" PRIu32 ", World=%" PRId32 ", X=%" PRId32 ", Y=%" PRId32 ", Z=%" PRId32 ", Px=%" PRId32 ", Py=%" PRId32 ", Pz=%" PRId32 "\n",
 		rank(), size(), my_X, my_Y, my_Z, peX, peY, peZ);
-	verbose(CALL_INFO, 2, 0, "Rank: %" PRIu32 ", Total communication partners: %d\n", rank(), (int) requestLength);
-	verbose(CALL_INFO, 2, 0, "Rank: %" PRIu32 ", X+: %" PRId32 ", X-: %" PRId32 "\n", rank(), xface_up, xface_down);
-	verbose(CALL_INFO, 2, 0, "Rank: %" PRIu32 ", Y+: %" PRId32 ", Y-: %" PRId32 "\n", rank(), yface_up, yface_down);
-	verbose(CALL_INFO, 2, 0, "Rank: %" PRIu32 ", Z+: %" PRId32 ", Z-: %" PRId32 "\n", rank(), zface_up, zface_down);
-	verbose(CALL_INFO, 2, 0, "Rank: %" PRIu32 ", LA: %" PRId32 ", LB: %" PRId32 ", LC: %" PRId32 ", LD: %" PRId32 "\n", rank(), line_a, line_b, line_c, line_d);
-	verbose(CALL_INFO, 2, 0, "Rank: %" PRIu32 ", LE: %" PRId32 ", LF: %" PRId32 ", LG: %" PRId32 ", LH: %" PRId32 "\n", rank(), line_e, line_f, line_g, line_h);
-	verbose(CALL_INFO, 2, 0, "Rank: %" PRIu32 ", LI: %" PRId32 ", LJ: %" PRId32 ", LK: %" PRId32 ", LL: %" PRId32 "\n", rank(), line_i, line_j, line_k, line_l);
-	verbose(CALL_INFO, 2, 0, "Rank: %" PRIu32 ", CA: %" PRId32 ", CB: %" PRId32 ", CC: %" PRId32 ", CD: %" PRId32 "\n", rank(),
+	verbose(CALL_INFO, 2, MOTIF_MASK, "Rank: %" PRIu32 ", Total communication partners: %d\n", rank(), (int) requestLength);
+	verbose(CALL_INFO, 2, MOTIF_MASK, "Rank: %" PRIu32 ", X+: %" PRId32 ", X-: %" PRId32 "\n", rank(), xface_up, xface_down);
+	verbose(CALL_INFO, 2, MOTIF_MASK, "Rank: %" PRIu32 ", Y+: %" PRId32 ", Y-: %" PRId32 "\n", rank(), yface_up, yface_down);
+	verbose(CALL_INFO, 2, MOTIF_MASK, "Rank: %" PRIu32 ", Z+: %" PRId32 ", Z-: %" PRId32 "\n", rank(), zface_up, zface_down);
+	verbose(CALL_INFO, 2, MOTIF_MASK, "Rank: %" PRIu32 ", LA: %" PRId32 ", LB: %" PRId32 ", LC: %" PRId32 ", LD: %" PRId32 "\n", rank(), line_a, line_b, line_c, line_d);
+	verbose(CALL_INFO, 2, MOTIF_MASK, "Rank: %" PRIu32 ", LE: %" PRId32 ", LF: %" PRId32 ", LG: %" PRId32 ", LH: %" PRId32 "\n", rank(), line_e, line_f, line_g, line_h);
+	verbose(CALL_INFO, 2, MOTIF_MASK, "Rank: %" PRIu32 ", LI: %" PRId32 ", LJ: %" PRId32 ", LK: %" PRId32 ", LL: %" PRId32 "\n", rank(), line_i, line_j, line_k, line_l);
+	verbose(CALL_INFO, 2, MOTIF_MASK, "Rank: %" PRIu32 ", CA: %" PRId32 ", CB: %" PRId32 ", CC: %" PRId32 ", CD: %" PRId32 "\n", rank(),
 		corner_a, corner_b, corner_c, corner_d);
-	verbose(CALL_INFO, 2, 0, "Rank: %" PRIu32 ", CE: %" PRId32 ", CF: %" PRId32 ", CG: %" PRId32 ", CH: %" PRId32 "\n", rank(),
+	verbose(CALL_INFO, 2, MOTIF_MASK, "Rank: %" PRIu32 ", CE: %" PRId32 ", CF: %" PRId32 ", CG: %" PRId32 ", CH: %" PRId32 "\n", rank(),
 		corner_e, corner_f, corner_g, corner_h);
 
-	verbose(CALL_INFO, 4, 0, "Allocating request entries...\n");
+	verbose(CALL_INFO, 4, MOTIF_MASK, "Allocating request entries...\n");
 	requests.resize( requestLength * 2 );
 }
 
 bool EmberHalo3D26Generator::generate( std::queue<EmberEvent*>& evQ) {
-	verbose(CALL_INFO, 1, 0, "Iteration on rank %" PRId32 "\n", rank());
+	verbose(CALL_INFO, 1, MOTIF_MASK, "Iteration on rank %" PRId32 "\n", rank());
 
 		enQ_compute( evQ, compute_the_time );
 
@@ -318,7 +318,7 @@ bool EmberHalo3D26Generator::generate( std::queue<EmberEvent*>& evQ) {
 			nextRequest++;
 		}
 
-		if(line_k > -1) { 
+		if(line_k > -1) {
 			enQ_irecv( evQ, line_k, items_per_cell * sizeof_cell * nz, 0, GroupWorld, &requests[nextRequest]);
 			nextRequest++;
 		}
@@ -395,7 +395,7 @@ bool EmberHalo3D26Generator::generate( std::queue<EmberEvent*>& evQ) {
 			nextRequest++;
 		}
 
-		if(zface_up > -1) { 
+		if(zface_up > -1) {
 			enQ_isend( evQ, zface_up, items_per_cell * sizeof_cell * ny * nx, 0, GroupWorld, &requests[nextRequest]);
 			nextRequest++;
 		}
@@ -420,7 +420,7 @@ bool EmberHalo3D26Generator::generate( std::queue<EmberEvent*>& evQ) {
 			nextRequest++;
 		}
 
-		if(line_e > -1) { 
+		if(line_e > -1) {
 			enQ_isend( evQ, line_e, items_per_cell * sizeof_cell * ny, 0, GroupWorld, &requests[nextRequest]);
 			nextRequest++;
 		}
@@ -470,7 +470,7 @@ bool EmberHalo3D26Generator::generate( std::queue<EmberEvent*>& evQ) {
 			nextRequest++;
 		}
 
-		if(corner_c > -1) { 
+		if(corner_c > -1) {
 			enQ_isend( evQ, corner_c, items_per_cell * sizeof_cell * 1, 0, GroupWorld, &requests[nextRequest]);
 			nextRequest++;
 		}
@@ -495,7 +495,7 @@ bool EmberHalo3D26Generator::generate( std::queue<EmberEvent*>& evQ) {
 			nextRequest++;
 		}
 
-		if(corner_h > -1) { 
+		if(corner_h > -1) {
 			enQ_isend( evQ, corner_h, items_per_cell * sizeof_cell * 1, 0, GroupWorld, &requests[nextRequest]);
 			nextRequest++;
 		}
@@ -503,7 +503,7 @@ bool EmberHalo3D26Generator::generate( std::queue<EmberEvent*>& evQ) {
 		// Enqueue a wait all for all the communications we have set up
 		enQ_waitall( evQ, nextRequest, &requests[0], NULL );
 
-		verbose(CALL_INFO, 1, 0, "Iteration on rank %" PRId32 " completed generation, %d events in queue\n",
+		verbose(CALL_INFO, 1, MOTIF_MASK, "Iteration on rank %" PRId32 " completed generation, %d events in queue\n",
 			rank(), (int)evQ.size());
 
     if ( ++m_loopIndex == iterations ) {

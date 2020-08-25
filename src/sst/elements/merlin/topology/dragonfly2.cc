@@ -1,8 +1,8 @@
-// Copyright 2009-2019 NTESS. Under the terms
+// Copyright 2009-2020 NTESS. Under the terms
 // of Contract DE-NA0003525 with NTESS, the U.S.
 // Government retains certain rights in this software.
 // 
-// Copyright (c) 2009-2019, NTESS
+// Copyright (c) 2009-2020, NTESS
 // All rights reserved.
 // 
 // Portions are copyright of other developers:
@@ -57,26 +57,26 @@ RouteToGroup2::setRouterPortPair(int group, int route_number, const RouterPortPa
  * [params.p, params.p+params.a-1)  // Routers within this group
  * [params.p+params.a-1, params.k)  // Other groups
  */
-topo_dragonfly2::topo_dragonfly2(Component* comp, Params &p) :
-    Topology(comp)
+topo_dragonfly2::topo_dragonfly2(ComponentId_t cid, Params &p, int num_ports, int rtr_id) :
+    Topology(cid)
 {
-    params.p = (uint32_t)p.find<int>("dragonfly:hosts_per_router");
-    params.a = (uint32_t)p.find<int>("dragonfly:routers_per_group");
-    params.k = (uint32_t)p.find<int>("num_ports");
-    params.h = (uint32_t)p.find<int>("dragonfly:intergroup_per_router");
-    params.g = (uint32_t)p.find<int>("dragonfly:num_groups");
-    params.n = (uint32_t)p.find<int>("dragonfly:intergroup_links");
+    params.p = p.find<uint32_t>("hosts_per_router");
+    params.a = p.find<uint32_t>("routers_per_group");
+    params.k = num_ports;
+    params.h = p.find<uint32_t>("intergroup_per_router");
+    params.g = p.find<uint32_t>("num_groups");
+    params.n = p.find<uint32_t>("intergroup_links");
 
-    std::string global_route_mode_s = p.find<std::string>("dragonfly:global_route_mode","absolute");
+    std::string global_route_mode_s = p.find<std::string>("global_route_mode","absolute");
     if ( global_route_mode_s == "absolute" ) global_route_mode = ABSOLUTE;
     else if ( global_route_mode_s == "relative" ) global_route_mode = RELATIVE;
     else {
-        output.fatal(CALL_INFO, -1, "Invalid dragonfly:global_route_mode specified: %s.\n",global_route_mode_s.c_str());        
+        output.fatal(CALL_INFO, -1, "Invalid global_route_mode specified: %s.\n",global_route_mode_s.c_str());        
     }
     
-    std::string route_algo = p.find<std::string>("dragonfly:algorithm", "minimal");
+    std::string route_algo = p.find<std::string>("algorithm", "minimal");
 
-    adaptive_threshold = p.find<double>("dragonfly:adaptive_threshold",2.0);
+    adaptive_threshold = p.find<double>("adaptive_threshold",2.0);
     
     // Get the global link map
     std::vector<int64_t> global_link_map;
@@ -85,7 +85,7 @@ topo_dragonfly2::topo_dragonfly2(Component* comp, Params &p) :
     // on new core features.  Once we want to use new core features,
     // delete code below and uncomment line above (can also get rid of
     // #include <sstream> above).
-    std::string array = p.find<std::string>("dragonfly:global_link_map");
+    std::string array = p.find<std::string>("global_link_map");
     if ( array != "" ) {
         array = array.substr(1,array.size()-2);
     
@@ -100,14 +100,14 @@ topo_dragonfly2::topo_dragonfly2(Component* comp, Params &p) :
     // End parse array on our own
     
     // Get a shared region
-    SharedRegion* sr = Simulation::getSharedRegionManager()->getGlobalSharedRegion("dragonfly:group_to_global_port",
+    SharedRegion* sr = Simulation::getSharedRegionManager()->getGlobalSharedRegion("group_to_global_port",
                                                                                   ((params.g-1) * params.n) * sizeof(RouterPortPair2),
                                                                                    new SharedRegionMerger());
     // Set up the RouteToGroup object
     group_to_global_port.init(sr, params.g, params.n);
 
     // Fill in the shared region using the RouteToGroupObject (if
-    // vector for param dragonfly:global_link_map is empty, then
+    // vector for param global_link_map is empty, then
     // nothing will be intialized.
     for ( int i = 0; i < global_link_map.size(); i++ ) {
         // Figure out all the mappings
@@ -144,14 +144,13 @@ topo_dragonfly2::topo_dragonfly2(Component* comp, Params &p) :
         algorithm = MINIMAL;
     }
 
-    uint32_t id = p.find<int>("id");
-    group_id = id / params.a;
-    router_id = id % params.a;
+    group_id = rtr_id / params.a;
+    router_id = rtr_id % params.a;
 
-    rng = new RNG::XORShiftRNG(id+1);
+    rng = new RNG::XORShiftRNG(rtr_id+1);
 
     output.verbose(CALL_INFO, 1, 1, "%u:%u:  ID: %u   Params:  p = %u  a = %u  k = %u  h = %u  g = %u\n",
-            group_id, router_id, id, params.p, params.a, params.k, params.h, params.g);
+            group_id, router_id, rtr_id, params.p, params.a, params.k, params.h, params.g);
 }
 
 
@@ -376,7 +375,7 @@ void topo_dragonfly2::reroute(int port, int vc, internal_router_event* ev)
 internal_router_event* topo_dragonfly2::process_input(RtrEvent* ev)
 {
     dgnfly2Addr dstAddr = {0, 0, 0, 0};
-    idToLocation(ev->request->dest, &dstAddr);
+    idToLocation(ev->getDest(), &dstAddr);
     
     switch (algorithm) {
     case MINIMAL:
@@ -411,9 +410,9 @@ internal_router_event* topo_dragonfly2::process_input(RtrEvent* ev)
     topo_dragonfly2_event *td_ev = new topo_dragonfly2_event(dstAddr);
     td_ev->src_group = group_id;
     td_ev->setEncapsulatedEvent(ev);
-    td_ev->setVC(ev->request->vn * 3);
-    td_ev->global_slice = ev->request->src % params.n;
-    td_ev->global_slice_shadow = ev->request->src % params.n;
+    td_ev->setVC(td_ev->getVN() * 3);
+    td_ev->global_slice = ev->getTrustedSrc() % params.n;
+    td_ev->global_slice_shadow = ev->getTrustedSrc() % params.n;
 
     if ( td_ev->getTraceType() != SST::Interfaces::SimpleNetwork::Request::NONE ) {
         output.output("TRACE(%d): process_input():"
@@ -497,7 +496,7 @@ void topo_dragonfly2::routeInitData(int port, internal_router_event* ev, std::ve
 internal_router_event* topo_dragonfly2::process_InitData_input(RtrEvent* ev)
 {
     dgnfly2Addr dstAddr;
-    idToLocation(ev->request->dest, &dstAddr);
+    idToLocation(ev->getDest(), &dstAddr);
     topo_dragonfly2_event *td_ev = new topo_dragonfly2_event(dstAddr);
     td_ev->src_group = group_id;
     td_ev->setEncapsulatedEvent(ev);

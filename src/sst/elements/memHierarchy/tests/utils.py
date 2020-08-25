@@ -1,7 +1,9 @@
 import sst
 import os
-import ConfigParser
-
+try:
+    import ConfigParser
+except ImportError:
+    import configparser as ConfigParser
 
 
 def connect(name, c0, port0, c1, port1, latency):
@@ -60,10 +62,10 @@ class Config:
         params = dict()
         params['max_reqs_cycle'] =  self.max_reqs_cycle
         params['generator'] = 'miranda.STREAMBenchGeneratorCustomCmd'
-        params['generatorParams.n'] = streamN / self.total_cores
-        params['generatorParams.start_a'] = ( (streamN * 32) / self.total_cores ) * core_id
-        params['generatorParams.start_b'] = ( (streamN * 32) / self.total_cores ) * core_id + (streamN * 32)
-        params['generatorParams.start_c'] = ( (streamN * 32) / self.total_cores ) * core_id + (2 * streamN * 32)
+        params['generatorParams.n'] = streamN // self.total_cores
+        params['generatorParams.start_a'] = ( (streamN * 32) // self.total_cores ) * core_id
+        params['generatorParams.start_b'] = ( (streamN * 32) // self.total_cores ) * core_id + (streamN * 32)
+        params['generatorParams.start_c'] = ( (streamN * 32) // self.total_cores ) * core_id + (2 * streamN * 32)
         params['generatorParams.operandwidth'] = 32
         params['generatorParams.verbose'] = int(self.verbose)
         params['generatorParams.write_cmd'] = 10
@@ -74,7 +76,7 @@ class Config:
         params = dict()
         # params['max_reqs_cycle'] =  self.max_reqs_cycle
         params['generator'] = 'miranda.GUPSGenerator'
-        params['generatorParams.count'] = streamN / self.total_cores
+        params['generatorParams.count'] = streamN // self.total_cores
         params['generatorParams.seed_a'] = 11
         params['generatorParams.seed_b'] = 31
         params['generatorParams.length'] = 32
@@ -88,7 +90,7 @@ class Config:
         params = dict()
         # params['max_reqs_cycle'] =  self.max_reqs_cycle
         params['generator'] = 'miranda.RandomGenerator'
-        params['generatorParams.count'] = streamN / self.total_cores
+        params['generatorParams.count'] = streamN // self.total_cores
         params['generatorParams.max_address'] = 16384
         params['generatorParams.issue_op_fences'] = "no"
         params['generatorParams.length'] = 32
@@ -112,7 +114,7 @@ class Config:
         params['generatorParams.matrix_row_indices_start_addr'] = 0
         params['generatorParams.matrix_col_indices_start_addr'] = 0
         params['generatorParams.matrix_element_start_addr'] = 0
-        params['generatorParams.iterations'] = streamN / self.total_cores
+        params['generatorParams.iterations'] = streamN // self.total_cores
         params['generatorParams.matrix_nnz_per_row'] = 9
         return params
 
@@ -151,15 +153,21 @@ class Config:
             #"replacement_policy": "lru",
             })
 
+    def getMemCtrlParams(self):
+        return dict({
+            "backing" : "none",
+            "debug" : "0",
+            "clock" : "1GHz",
+            #"clock" : self.memory_clock,
+            "customCmdHandler" : "memHierarchy.amoCustomCmdHandler",
+
+            })
     def getMemParams(self):
         return dict({
             #"backend" : "memHierarchy.simpleMem",
             #"backend.access_time" : "30ns",
             #"memNIC.network_bw": self.ring_bandwidth,
-            "backend.mem_size" : self.memory_capacity,
-            "backend.clock" : self.memory_clock,
-            "backing" : "none",
-            "debug" : "1",
+            "mem_size" : self.memory_capacity,
             #"system_ini" : "system.ini",
             #"clock" : "1Ghz",
             #"backend.access_time" : "100 ns",
@@ -167,21 +175,15 @@ class Config:
             #"backend.system_ini" : "HBMSystem.ini",
             #"backend.tracing" : "1",
             #"backend" : "memHierarchy.hbmdramsim",
-
-            "coherence_protocol" : "MESI",
-            "backend.access_time" : "1000 ns",
-            "backend.mem_size" : "512MiB",
-            "clock" : "1GHz",
-            "customCmdHandler" : "memHierarchy.amoCustomCmdHandler",
-            "backendConvertor" : "memHierarchy.extMemBackendConvertor",
-            "backend" : "memHierarchy.goblinHMCSim",
-            "backend.verbose" : "0",
-            "backend.trace-banks" : "1",
-            "backend.trace-queue" : "1",
-            "backend.trace-cmds" : "1",
-            "backend.trace-latency" : "1",
-            "backend.trace-stalls" : "1",
-            "backend.cmd-map" : "[CUSTOM:10:64:WR64]"
+            "clock" : self.memory_clock,
+            "access_time" : "1000 ns",
+            "verbose" : "0",
+            "trace-banks" : "1",
+            "trace-queue" : "1",
+            "trace-cmds" : "1",
+            "trace-latency" : "1",
+            "trace-stalls" : "1",
+            "cmd-map" : "[CUSTOM:10:64:WR64]"
             })
 
     def getDCParams(self, dc_id):
@@ -192,7 +194,7 @@ class Config:
             "debug" : 0,
             "debug_level" : 10,
             "memNIC.addr_range_start" : 0,
-            "memNIC.addr_range_end" : (int(filter(str.isdigit, self.memory_capacity)) * 1024 * 1024),
+            "memNIC.addr_range_end" : (int(''.join(filter(str.isdigit, self.memory_capacity))) * 1024 * 1024),
             # Default params
             # "coherence_protocol": coherence_protocol,
             })

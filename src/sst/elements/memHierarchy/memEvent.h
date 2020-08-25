@@ -1,8 +1,8 @@
-// Copyright 2009-2019 NTESS. Under the terms
+// Copyright 2009-2020 NTESS. Under the terms
 // of Contract DE-NA0003525 with NTESS, the U.S.
 // Government retains certain rights in this software.
 //
-// Copyright (c) 2009-2019, NTESS
+// Copyright (c) 2009-2020, NTESS
 // All rights reserved.
 //
 // Portions are copyright of other developers:
@@ -40,14 +40,13 @@ using namespace std;
  */
 class MemEvent : public MemEventBase  {
 public:
-    
+
     /****** Old calls will now throw deprecated warnings since parent pointer is not available *************/
     /** Creates a new MemEvent - Generic */
     MemEvent(const Component *src, Addr addr, Addr baseAddr, Command cmd) : MemEventBase(src->getName(), cmd) {
         initialize();
         addr_ = addr;
         baseAddr_ = baseAddr;
-        initTime_ = src->getCurrentSimTimeNano();
     }
 
     /** MemEvent constructor - Reads */
@@ -55,7 +54,6 @@ public:
         initialize();
         addr_ = addr;
         baseAddr_ = baseAddr;
-        initTime_ = src->getCurrentSimTimeNano();
         size_ = size;
     }
 
@@ -64,43 +62,38 @@ public:
         initialize();
         addr_ = addr;
         baseAddr_ = baseAddr;
-        initTime_ = src->getCurrentSimTimeNano();
         setPayload(data); // Also sets size_ field
     }
 
     /************ New calls - use these! *****************/
-    MemEvent(std::string src, Addr addr, Addr baseAddr, Command cmd, uint64_t timeInNano) : MemEventBase(src, cmd) {
+    MemEvent(std::string src, Addr addr, Addr baseAddr, Command cmd) : MemEventBase(src, cmd) {
         initialize();
         addr_ = addr;
         baseAddr_ = baseAddr;
-        initTime_ = timeInNano;
     }
-    MemEvent(std::string src, Addr addr, Addr baseAddr, Command cmd, uint32_t size, uint64_t timeInNano) : MemEventBase(src, cmd) {
+    MemEvent(std::string src, Addr addr, Addr baseAddr, Command cmd, uint32_t size) : MemEventBase(src, cmd) {
         initialize();
         addr_ = addr;
         baseAddr_ = baseAddr;
-        initTime_ = timeInNano;
         size_ = size;
     }
-    MemEvent(std::string src, Addr addr, Addr baseAddr, Command cmd, std::vector<uint8_t>& data, uint64_t timeInNano) : MemEventBase(src, cmd) {
+    MemEvent(std::string src, Addr addr, Addr baseAddr, Command cmd, std::vector<uint8_t>& data) : MemEventBase(src, cmd) {
         initialize();
         addr_ = addr;
         baseAddr_ = baseAddr;
-        initTime_ = timeInNano;
         setPayload(data);
     }
 
 
 
     /** Create a new MemEvent instance, pre-configured to act as a NACK response */
-    MemEvent* makeNACKResponse(MemEvent* NACKedEvent, SimTime_t timeInNano) {
+    MemEvent* makeNACKResponse(MemEvent* NACKedEvent) {
         MemEvent *me      = new MemEvent(*this);
         me->setResponse(this);
-        me->NACKedEvent_  = NACKedEvent;
-        me->cmd_          = Command::NACK;
-        me->initTime_     = timeInNano;
-        me->instPtr_      = instPtr_;
-        me->vAddr_        = vAddr_;
+        me->NACKedEvent_    = NACKedEvent;
+        me->cmd_            = Command::NACK;
+        me->instPtr_        = instPtr_;
+        me->vAddr_          = vAddr_;
         return me;
     }
 
@@ -129,6 +122,13 @@ public:
         return me;
     }
 
+    void copyMetadata(MemEventBase* ev) override {
+        MemEventBase::copyMetadata(ev);
+        MemEvent * ev1 = static_cast<MemEvent*>(ev);
+        vAddr_ = ev1->getVirtualAddress();
+        instPtr_ = ev1->getInstructionPointer();
+    }
+
     void initialize() {
         addr_               = 0;
         baseAddr_           = 0;
@@ -138,22 +138,22 @@ public:
         NACKedEvent_        = nullptr;
         retries_            = 0;
         blocked_            = false;
-        initTime_           = 0;
         payload_.clear();
         dirty_              = false;
 	instPtr_	    = 0;
 	vAddr_		    = 0;
         inProgress_         = false;
+        isEvict_            = false;
     }
 
     /** return the original event that caused a NACK */
     MemEvent* getNACKedEvent() { return NACKedEvent_; }
-    
+
     /** @return  the target Address of this MemEvent */
     Addr getAddr(void) const { return addr_; }
     /** Sets the target Address of this MemEvent */
     void setAddr(Addr addr) { addr_ = addr; }
-    
+
     /** Sets the Base Address of this MemEvent */
     void setBaseAddr(Addr baseAddr) { baseAddr_ = baseAddr; }
     /** Return the BaseAddr */
@@ -174,30 +174,27 @@ public:
     /** Get the instruction pointer of that caused this MemEvent */
     uint64_t getInstructionPointer() const { return instPtr_; }
 
-    /** Returns the time (in nanoseconds) when this event was created */
-    SimTime_t getInitializationTime(void) const { return initTime_; }
-
     /** @return  the size in bytes that this MemEvent represents */
     uint32_t getSize(void) const { return size_; }
     /** Sets the size in bytes that this MemEvent represents */
     void setSize(uint32_t size) { size_ = size; }
-   
+
     /** Increments the number of retries */
     void incrementRetries() { retries_++; }
     int getRetries() { return retries_; }
 
     bool blocked() { return blocked_; }
     void setBlocked(bool value) { blocked_ = value; }
-    
+
     bool inProgress() { return inProgress_; }
     void setInProgress(bool value) { inProgress_ = value; }
 
     void setLoadLink() { setFlag(MemEventBase::F_LLSC); }
     bool isLoadLink() { return cmd_ == Command::GetS && queryFlag(MemEventBase::F_LLSC); }
-    
+
     void setStoreConditional() { setFlag(MemEventBase::F_LLSC); }
     bool isStoreConditional() { return cmd_ == Command::GetX && queryFlag(MemEventBase::F_LLSC); }
-    
+
     void setSuccess(bool b) { b ? setFlag(MemEventBase::F_SUCCESS) : clearFlag(MemEventBase::F_SUCCESS); }
     bool success() { return queryFlag(MemEventBase::F_SUCCESS); }
 
@@ -210,7 +207,7 @@ public:
         if ( payload_.size() < size_ )  payload_.resize(size_);
         return payload_;
     }
-    
+
 
     /** Sets the data payload and payload size.
      * @param[in] data  Vector from which to copy data
@@ -219,7 +216,7 @@ public:
         setSize(data.size());
         payload_ = data;
     }
-    
+
     /** Sets the data payload and payload size.
      * @param[in] size  How many bytes to copy from data
      * @param[in] data  Data array to set as payload
@@ -246,7 +243,7 @@ public:
     void setPrefetchFlag(bool prefetch) { prefetch_ = prefetch;}
     /** Returns true if this is a prefetch command */
     bool isPrefetch() { return prefetch_; }
-    
+
 // Information about command types
     /** Returns true if this is a request that needs to access the data array (Get/Put/Flush) */
     bool isDataRequest(void) const { return CommandClassArr[(int)cmd_] == CommandClass::Request; }
@@ -257,6 +254,8 @@ public:
     /** Returns true if this is a CPU-side event (i.e., sent from CPU side of hierarchy) */
     bool isCPUSideEvent(void) const { return CommandCPUSide[(int)cmd_]; }
 
+    void setEvict(bool status) { isEvict_ = status; }
+    bool getEvict() { return isEvict_; }
 
     void setDirty(bool status) { dirty_ = status; }
     bool getDirty() { return dirty_; }
@@ -267,21 +266,31 @@ public:
 
     virtual std::string getVerboseString() override {
         std::ostringstream str;
-        str << std::hex << " Addr: 0x" << addr_ << " BaseAddr: 0x" << baseAddr_;
-        str << (addrGlobal_ ? " (Global)" : " (Local)");
+        if (addr_ != baseAddr_)
+            str << std::hex << " Addr: 0x" << baseAddr_ << "/0x" << addr_;
+        else
+            str << std::hex << " Addr: 0x" << baseAddr_;
+        str << (addrGlobal_ ? " (G)" : " (L)");
+        str << " Data: " << (payload_.empty() ? "F" : "T");
         str << " VA: 0x" << vAddr_ << " IP: 0x" << instPtr_;
         str << std::dec << " Size: " << size_;
-        str << " Prefetch: " << (prefetch_ ? "true" : "false");
+        str << " Prf: " << (prefetch_ ? "T" : "F");
         return MemEventBase::getVerboseString() + str.str();
     }
 
     virtual std::string getBriefString() override {
         std::ostringstream str;
-        str << " Addr: 0x" << std::hex << addr_ << " BaseAddr: 0x" << baseAddr_ << std::dec << " Size: " << size_;
+        if (addr_ != baseAddr_)
+            str << std::hex << " Addr: 0x" << baseAddr_ << "/0x" << addr_;
+        else
+            str << std::hex << " Addr: 0x" << baseAddr_;
+        str << std::dec << " Size: " << size_;
         return MemEventBase::getBriefString() + str.str();
     }
-    
+
     virtual bool doDebug(std::set<Addr> &addr) override {
+        if (cmd_ == Command::NULLCMD && addr.find(addr_) != addr.end())
+            return true;
         return (addr.find(baseAddr_) != addr.end());
     }
 
@@ -293,14 +302,14 @@ private:
     uint32_t        size_;              // Size in bytes that are being requested
     Addr            addr_;              // Address
     Addr            baseAddr_;          // Base (line) address
-    bool            addrGlobal_;        // Whether address is a local or global address 
+    bool            addrGlobal_;        // Whether address is a local or global address
     MemEvent*       NACKedEvent_;       // For a NACK, pointer to the NACKed event
     int             retries_;           // For NACKed events, how many times a retry has been sent
     dataVec         payload_;           // Data
     bool            prefetch_;          // Whether this request came from a prefetcher
     bool            blocked_;           // Whether this request blocked for another pending request (for profiling) TODO move to mshrs
-    SimTime_t       initTime_;          // Timestamp when event was created, for detecting timeouts TODO move to mshrs
     bool            dirty_;             // For a replacement, whether the data is dirty or not
+    bool            isEvict_;           // Whether an event is an eviction
     Addr	    instPtr_;           // Instruction pointer associated with the request
     Addr 	    vAddr_;             // Virtual address associated with the request
     bool            inProgress_;        // Whether this request is currently being handled, if in MSHR TODO move to mshrs
@@ -319,14 +328,14 @@ public:
         ser & payload_;
         ser & prefetch_;
         ser & blocked_;
-        ser & initTime_;
         ser & dirty_;
+        ser & isEvict_;
         ser & instPtr_;
         ser & vAddr_;
         ser & inProgress_;
     }
-     
-    ImplementSerializable(SST::MemHierarchy::MemEvent);     
+
+    ImplementSerializable(SST::MemHierarchy::MemEvent);
 };
 
 }}

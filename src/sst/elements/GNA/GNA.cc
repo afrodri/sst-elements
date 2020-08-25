@@ -1,8 +1,8 @@
-// Copyright 2018 NTESS. Under the terms
+// Copyright 2018-2020 NTESS. Under the terms
 // of Contract DE-NA0003525 with NTESS, the U.S.
 // Government retains certain rights in this software.
 //
-// Copyright (c) 2018, NTESS
+// Copyright (c) 2018-2020, NTESS
 // All rights reserved.
 //
 // Portions are copyright of other developers:
@@ -35,23 +35,23 @@ GNA::GNA(ComponentId_t id, Params& params) :
     numNeurons = params.find<int>("neurons", 32);
     if (numNeurons <= 0) {
         out.fatal(CALL_INFO, -1,"number of neurons invalid\n");
-    }    
+    }
     BWPpTic = params.find<int>("BWPperTic", 2);
     if (BWPpTic <= 0) {
         out.fatal(CALL_INFO, -1,"BWPperTic invalid\n");
-    }    
+    }
     STSDispatch = params.find<int>("STSDispatch", 2);
     if (STSDispatch <= 0) {
         out.fatal(CALL_INFO, -1,"STSDispatch invalid\n");
-    }  
+    }
     STSParallelism = params.find<int>("STSParallelism", 2);
     if (STSParallelism <= 0) {
         out.fatal(CALL_INFO, -1,"STSParallelism invalid\n");
-    }    
+    }
     maxOutMem = params.find<int>("MaxOutMem", STSParallelism);
     if (maxOutMem <= 0) {
         out.fatal(CALL_INFO, -1,"MaxOutMem invalid\n");
-    }    
+    }
 
     // graph params
     graphType = params.find<int>("graphType", 0);
@@ -87,13 +87,13 @@ GNA::GNA(ComponentId_t id, Params& params) :
     primaryComponentDoNotEndSim();
 
     // init memory
-    memory = loadUserSubComponent<Interfaces::SimpleMem>("memory", clockTC, new Interfaces::SimpleMem::Handler<GNA>(this, &GNA::handleEvent));
+    memory = loadUserSubComponent<Interfaces::SimpleMem>("memory", ComponentInfo::SHARE_NONE, clockTC, new Interfaces::SimpleMem::Handler<GNA>(this, &GNA::handleEvent));
     if (!memory) {
         params.insert("port", "mem_link");
-        memory = loadAnonymousSubComponent<Interfaces::SimpleMem>("memHierarchy.memInterface", "memory", 0, 
+        memory = loadAnonymousSubComponent<Interfaces::SimpleMem>("memHierarchy.memInterface", "memory", 0,
                 ComponentInfo::SHARE_PORTS, params, clockTC, new Interfaces::SimpleMem::Handler<GNA>(this, &GNA::handleEvent));
     }
-    if (!memory) 
+    if (!memory)
         out.fatal(CALL_INFO, -1, "Unable to load memHierarchy.memInterface subcomponent\n");
 }
 
@@ -106,10 +106,10 @@ GNA::GNA() : Component(-1)
 void GNA::init(unsigned int phase) {
     using namespace Neuron_Loader_Types;
     using namespace White_Matter_Types;
-    
+
     // init memory
     memory->init(phase);
-    
+
     // Everything below we only do once
     if (phase != 0) {
         return;
@@ -213,6 +213,20 @@ void GNA::wavyGraph() {
     
 
     // neurons
+#if 0
+    for (int nrn_num=0;nrn_num<=8;nrn_num++)
+        neurons[nrn_num].configure((T_NctFl){1000,-2.0,0.0});
+    for (int nrn_num=9;nrn_num<=11;nrn_num++)
+        neurons[nrn_num].configure((T_NctFl){ 750,-2.0,0.0});
+    for (int nrn_num=12;nrn_num<=12;nrn_num++)
+        neurons[nrn_num].configure((T_NctFl){1000,-2.0,0.0});
+    for (int nrn_num=13;nrn_num<=15;nrn_num++)
+        neurons[nrn_num].configure((T_NctFl){ 750,-2.0,0.0});
+    for (int nrn_num=16;nrn_num<=23;nrn_num++)
+        neurons[nrn_num].configure((T_NctFl){ 500,-2.0,0.0});
+    for (int nrn_num=24;nrn_num<=31;nrn_num++)
+        neurons[nrn_num].configure((T_NctFl){1500,-2.0,0.0});
+#else
     for (int nrn_num=0;nrn_num<numNeurons;nrn_num++) {
         uint16_t trig = rng.generateNextUInt32() % 100 + 350;
         neurons[nrn_num]
@@ -256,7 +270,7 @@ void GNA::wavyGraph() {
                 targ = 0;
 
             uint64_t reqAddr = startAddr+nn*sizeof(T_Wme);
-            SimpleMem::Request *req = 
+            SimpleMem::Request *req =
                 new SimpleMem::Request(SimpleMem::Request::Write, reqAddr,
                                        sizeof(T_Wme));
             req->data.resize(sizeof(T_Wme));
@@ -358,7 +372,7 @@ void GNA::assignSTS() {
             e.assign(firedNeurons.front());
             firedNeurons.pop_front();
             remainDispatches--;
-        } 
+        }
         if (remainDispatches == 0) return;
     }
 }

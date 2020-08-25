@@ -1,8 +1,8 @@
-// Copyright 2009-2019 NTESS. Under the terms
+// Copyright 2009-2020 NTESS. Under the terms
 // of Contract DE-NA0003525 with NTESS, the U.S.
 // Government retains certain rights in this software.
 //
-// Copyright (c) 2009-2019, NTESS
+// Copyright (c) 2009-2020, NTESS
 // All rights reserved.
 //
 // Portions are copyright of other developers:
@@ -22,15 +22,16 @@ using namespace SST::Firefly;
 
 Nic::RecvMachine::RdmaStream::RdmaStream( Output& output, Ctx* ctx, int srcNode,
         int srcPid, int destPid, FireflyNetworkEvent* ev ) :
-    StreamBase( output, ctx, srcNode, srcPid, destPid )
+    StreamBase( output, ctx, srcNode, srcPid, destPid ), m_blocked(true)
 {
     m_unit = m_ctx->allocRecvUnit();
+    processPktHdr(ev);
+    m_blocked = false;
 }
 void Nic::RecvMachine::RdmaStream::processPktHdr( FireflyNetworkEvent* ev ) {
 
     MsgHdr& hdr         = *(MsgHdr*) ev->bufPtr();
     RdmaMsgHdr& rdmaHdr = *(RdmaMsgHdr*) ev->bufPtr( sizeof(MsgHdr) );
-
     Callback callback;
     int delay = 0;
     switch ( rdmaHdr.op  ) {

@@ -1,6 +1,14 @@
+##################################################
+##
+## MODEL_PARAMS
+##  simpleMem = basicDetailedModelParams
+##  timingDRAM = timingDetailedModelParams
+##  Cramsim = cramsimDetailedModelParams
+##
+##################################################
 
 SHAPE="5,5:5,5:8"
-LOADFILE="loadFAM200Detailed"
+LOADFILE="loadFAM200detailed"
 
 STATMODULE='statModule'
 STATFILE='myStats.out'

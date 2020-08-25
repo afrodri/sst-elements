@@ -1,8 +1,8 @@
-// Copyright 2009-2019 NTESS. Under the terms
+// Copyright 2009-2020 NTESS. Under the terms
 // of Contract DE-NA0003525 with NTESS, the U.S.
 // Government retains certain rights in this software.
 // 
-// Copyright (c) 2009-2019, NTESS
+// Copyright (c) 2009-2020, NTESS
 // All rights reserved.
 // 
 // Portions are copyright of other developers:
@@ -23,17 +23,14 @@
 using namespace SST::Merlin;
 
 
-topo_mesh::topo_mesh(Component* comp, Params& params) :
-    Topology(comp)
+topo_mesh::topo_mesh(ComponentId_t cid, Params& params, int num_ports, int rtr_id) :
+    Topology(cid),
+    router_id(rtr_id)
 {
 
     // Get the various parameters
-    router_id = params.find<int>("id",-1);
-    if ( router_id == -1 ) {
-    }
-
     std::string shape;
-    shape = params.find<std::string>("mesh:shape");
+    shape = params.find<std::string>("shape");
     if ( !shape.compare("") ) {
     }
 
@@ -47,7 +44,7 @@ topo_mesh::topo_mesh(Component* comp, Params& params) :
 
     parseDimString(shape, dim_size);
 
-    std::string width = params.find<std::string>("mesh:width", "");
+    std::string width = params.find<std::string>("width", "");
     if ( width.compare("") == 0 ) {
         for ( int i = 0 ; i < dimensions ; i++ )
             dim_width[i] = 1;
@@ -63,11 +60,7 @@ topo_mesh::topo_mesh(Component* comp, Params& params) :
         }
     }
 
-    num_local_ports = params.find<int>("mesh:local_ports", 1);
-
-    int n_ports = params.find<int>("num_ports",-1);
-    if ( n_ports == -1 )
-        output.fatal(CALL_INFO, -1, "Router must have 'num_ports' parameter set\n");
+    num_local_ports = params.find<int>("local_ports", 1);
 
     int needed_ports = 0;
     for ( int i = 0 ; i < dimensions ; i++ ) {
@@ -75,7 +68,7 @@ topo_mesh::topo_mesh(Component* comp, Params& params) :
     }
 
 
-    if ( n_ports < (needed_ports+num_local_ports) ) {
+    if ( num_ports < (needed_ports+num_local_ports) ) {
         output.fatal(CALL_INFO, -1, "Number of ports should be at least %d for this configuration\n", needed_ports+num_local_ports);
     }
 
@@ -138,7 +131,7 @@ topo_mesh::process_input(RtrEvent* ev)
 {
     topo_mesh_event* tt_ev = new topo_mesh_event(dimensions);
     tt_ev->setEncapsulatedEvent(ev);
-    tt_ev->setVC(ev->request->vn * 2);
+    tt_ev->setVC(tt_ev->getVN() * 2);
     
     // Need to figure out what the mesh address is for easier
     // routing.
@@ -197,7 +190,6 @@ internal_router_event* topo_mesh::process_InitData_input(RtrEvent* ev)
 {
     topo_mesh_init_event* tt_ev = new topo_mesh_init_event(dimensions);
     tt_ev->setEncapsulatedEvent(ev);
-    tt_ev->setVC(ev->request->vn * 2);
     if ( tt_ev->getDest() == INIT_BROADCAST_ADDR ) {
         /* For broadcast, first send to rtr 0 */
         idToLocation(0, tt_ev->dest_loc);

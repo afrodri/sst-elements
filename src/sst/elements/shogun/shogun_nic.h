@@ -1,3 +1,17 @@
+// Copyright 2009-2020 NTESS. Under the terms
+// of Contract DE-NA0003525 with NTESS, the U.S.
+// Government retains certain rights in this software.
+//
+// Copyright (c) 2009-2020, NTESS
+// All rights reserved.
+//
+// Portions are copyright of other developers:
+// See the file CONTRIBUTORS.TXT in the top level directory
+// the distribution for more information.
+//
+// This file is part of the SST software package. For license
+// information, see the LICENSE file in the top level directory of the
+// distribution.
 
 #ifndef _H_SHOGUN_NIC
 #define _H_SHOGUN_NIC
@@ -18,32 +32,22 @@ namespace Shogun {
     class ShogunNIC : public SST::Interfaces::SimpleNetwork {
 
     public:
-        SST_ELI_REGISTER_SUBCOMPONENT(
+        SST_ELI_REGISTER_SUBCOMPONENT_DERIVED(
             ShogunNIC,
             "shogun",
             "ShogunNIC",
             SST_ELI_ELEMENT_VERSION(1, 0, 0),
             "Shogun X-Bar Interface for Memory Crossbars",
-            "SST::Interfaces::SimpleNetwork");
+            SST::Interfaces::SimpleNetwork);
 
         SST_ELI_DOCUMENT_PARAMS(
-            { "verbose", "Level of output verbosity, higher is more output, 0 is	no output", 0 })
+            { "verbose", "Level of output verbosity, higher is more output, 0 is no output", "0"},
+            { "port_name", "If loaded anonymously, port to use (otherwise will use own port)", "port"})
 
-        ShogunNIC(SST::Component* component, Params& params);
+        SST_ELI_DOCUMENT_PORTS( {"port", "Port into network", {"shogun.ShogunCreditEvent", "shogun.ShogunEvent"} } )
+
+        ShogunNIC(SST::ComponentId_t id, Params& params, int vns);
         ~ShogunNIC();
-
-        /** Second half of building the interface.
-        Initialize network interface
-        @param portName - Name of port to connect to
-        @param link_bw - Bandwidth of the link
-        @param vns - Number of virtual networks to be provided
-        @param in_buf_size - Size of input buffers (from router)
-        @param out_buf_size - Size of output buffers (to router)
-     * @return true if the link was able to be configured.
-     */
-        virtual bool initialize(const std::string& portName, const UnitAlgebra& link_bw,
-            int vns, const UnitAlgebra& in_buf_size,
-            const UnitAlgebra& out_buf_size) override;
 
         /**
      		* Sends a network request during the init() phase
@@ -176,7 +180,7 @@ namespace Shogun {
      * initialized.
      * @return Link bandwidth of associated link
      */
-        virtual const UnitAlgebra& getLinkBW() const;
+        virtual const UnitAlgebra& getLinkBW() const override;
 
     private:
         SST::Output* output;
@@ -194,6 +198,8 @@ namespace Shogun {
         void reconfigureNIC(ShogunInitEvent* initEv);
 
         std::vector<Request*> initReqs;
+
+        UnitAlgebra bw;
     };
 
 }

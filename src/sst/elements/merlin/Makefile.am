@@ -13,14 +13,10 @@ libmerlin_la_SOURCES = \
 	merlin.h \
 	merlin.cc \
 	router.h \
-	linkControl.h \
-	linkControl.cc \
-	portControl.h \
-	portControl.cc \
-	reorderLinkControl.h \
-	reorderLinkControl.cc \
 	bridge.h \
 	bridge.cc \
+	background_traffic/background_traffic.h \
+	background_traffic/background_traffic.cc \
 	offeredload/offered_load.h \
 	offeredload/offered_load.cc \
 	target_generator/target_generator.h \
@@ -66,9 +62,28 @@ libmerlin_la_SOURCES = \
 	inspectors/circuitCounter.cc \
 	inspectors/testInspector.cc \
 	inspectors/testInspector.h \
+	interfaces/linkControl.h \
+	interfaces/linkControl.cc \
+	interfaces/portControl.h \
+	interfaces/portControl.cc \
+	interfaces/reorderLinkControl.h \
+	interfaces/reorderLinkControl.cc \
+	interfaces/output_arb_basic.h \
+	interfaces/output_arb_qos_multi.h \
+	arbitration/single_arb.h \
+	arbitration/single_arb_lru.h \
+	arbitration/single_arb_rr.h \
 	pymodule.h \
 	pymodule.c \
-	pymerlin.py
+	pymerlin.py \
+	pymerlin-base.py \
+	pymerlin-endpoint.py \
+	pymerlin-router.py \
+	interfaces/pymerlin-interface.py \
+	topology/pymerlin-topo-dragonfly.py \
+	topology/pymerlin-topo-hyperx.py \
+	topology/pymerlin-topo-fattree.py \
+	topology/pymerlin-topo-mesh.py
 
 EXTRA_DIST = \
 	tests/dragon_128_test.py \
@@ -77,16 +92,30 @@ EXTRA_DIST = \
 	tests/fattree_256_test.py \
 	tests/torus_128_test.py \
 	tests/torus_5_trafficgen.py \
-	tests/torus_64_test.py
+	tests/torus_64_test.py \
+	tests/dragon_128_platform_test.py \
+	tests/platform_file_dragon_128.py
 
 sstdir = $(includedir)/sst/elements/merlin
 nobase_sst_HEADERS = \
-	linkControl.h \
 	router.h
 
 libmerlin_la_LDFLAGS = -module -avoid-version $(PYTHON_LDFLAGS)
 
-BUILT_SOURCES = pymerlin.inc
+BUILT_SOURCES = \
+	pymerlin.inc \
+	pymerlin-base.inc \
+	pymerlin-endpoint.inc \
+	pymerlin-router.inc \
+	interfaces/pymerlin-interface.inc \
+	topology/pymerlin-topo-dragonfly.inc \
+	topology/pymerlin-topo-hyperx.inc \
+	topology/pymerlin-topo-fattree.inc \
+	topology/pymerlin-topo-mesh.inc
+
+install-exec-hook:
+	$(SST_REGISTER_TOOL) SST_ELEMENT_SOURCE     merlin=$(abs_srcdir)
+	$(SST_REGISTER_TOOL) SST_ELEMENT_TESTS      merlin=$(abs_srcdir)/tests
 
 # This sed script converts 'od' output to a comma-separated list of byte-
 # values, suitable for #include'ing into an array definition.
@@ -104,4 +133,4 @@ BUILT_SOURCES = pymerlin.inc
 clean-local: clean-local-check
 .PHONY: clean-local-check
 clean-local-check:
-	-rm -rf pymerlin.inc
+	-rm -rf $(BUILT_SOURCES)

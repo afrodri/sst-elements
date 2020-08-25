@@ -1,8 +1,8 @@
-// Copyright 2009-2019 NTESS. Under the terms
+// Copyright 2009-2020 NTESS. Under the terms
 // of Contract DE-NA0003525 with NTESS, the U.S.
 // Government retains certain rights in this software.
 //
-// Copyright (c) 2009-2019, NTESS
+// Copyright (c) 2009-2020, NTESS
 // All rights reserved.
 //
 // Portions are copyright of other developers:
@@ -26,7 +26,7 @@ namespace Ember {
 class EmberRankMap : public Module {
 
 public:
-	EmberRankMap(Component* owner, Params& params) {}
+	EmberRankMap(Params& params) {}
 	~EmberRankMap() {}
 	virtual void setEnvironment(const uint32_t rank, const uint32_t worldSize) = 0;
 	virtual uint32_t mapRank(const uint32_t input) = 0;

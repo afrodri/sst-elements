@@ -1,8 +1,8 @@
-// Copyright 2009-2019 NTESS. Under the terms
+// Copyright 2009-2020 NTESS. Under the terms
 // of Contract DE-NA0003525 with NTESS, the U.S.
 // Government retains certain rights in this software.
 //
-// Copyright (c) 2009-2019, NTESS
+// Copyright (c) 2009-2020, NTESS
 // All rights reserved.
 //
 // Portions are copyright of other developers:
@@ -34,7 +34,7 @@
 #define C_TOKENCHGEVENT_HPP_
 
 namespace SST {
-namespace n_Bank {
+namespace CramSim {
 // This event passes between components the change in tokens for a resource
 class c_TokenChgEvent: public SST::Event {
 public:
@@ -48,7 +48,7 @@ public:
 		ser & m_payload;
 	}
 
-	ImplementSerializable (SST::n_Bank::c_TokenChgEvent);
+	ImplementSerializable (SST::CramSim::c_TokenChgEvent);
 
 };
 

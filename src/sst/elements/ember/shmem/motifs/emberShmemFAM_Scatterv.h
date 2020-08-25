@@ -1,8 +1,8 @@
-// Copyright 2009-2019 NTESS. Under the terms
+// Copyright 2009-2020 NTESS. Under the terms
 // of Contract DE-NA0003525 with NTESS, the U.S.
 // Government retains certain rights in this software.
 //
-// Copyright (c) 2009-2019, NTESS
+// Copyright (c) 2009-2020, NTESS
 // All rights reserved.
 //
 // Portions are copyright of other developers:
@@ -32,13 +32,13 @@ namespace Ember {
 class EmberShmemFAM_ScattervGenerator : public EmberShmemGenerator {
 
 public:
-    SST_ELI_REGISTER_SUBCOMPONENT(
+    SST_ELI_REGISTER_SUBCOMPONENT_DERIVED(
         EmberShmemFAM_ScattervGenerator,
         "ember",
         "ShmemFAM_ScattervMotif",
         SST_ELI_ELEMENT_VERSION(1,0,0),
         "SHMEM FAM_Scatterv",
-        "SST::Ember::EmberGenerator"
+        SST::Ember::EmberGenerator
 
     )
 
@@ -46,9 +46,9 @@ public:
     )
 
 public:
-	EmberShmemFAM_ScattervGenerator(SST::Component* owner, Params& params) :
-		EmberShmemGenerator(owner, params, "ShmemFAM_Scatterv" ), m_phase(Init), m_groupName("MyApplication")
-	{ 
+	EmberShmemFAM_ScattervGenerator(SST::ComponentId_t id, Params& params) :
+		EmberShmemGenerator(id, params, "ShmemFAM_Scatterv" ), m_phase(Init), m_groupName("MyApplication")
+	{
 		m_blocking      = params.find<bool>("arg.blocking", false);
 		m_blockSize	    = params.find<int>("arg.blockSize", 4096);
 		m_numBlocks	    = params.find<int>("arg.numBlocks", 0);
@@ -59,12 +59,10 @@ public:
 		m_indexes.resize( m_numBlocks );
 		for ( int i = 0; i < m_numBlocks; i++ ) {
 			m_indexes[i] = i;
-		} 
-        m_miscLib = static_cast<EmberMiscLib*>(getLib("HadesMisc"));
-        assert(m_miscLib);
+		}
 	}
 
-    bool generate( std::queue<EmberEvent*>& evQ) 
+    bool generate( std::queue<EmberEvent*>& evQ)
 	{
         switch ( m_phase ) {
         case Init:
@@ -92,7 +90,7 @@ public:
             break;
 
         case Work:
-			
+
 			if ( m_blockStride ) {
 				if ( m_blocking ) {
         			enQ_fam_scatter_blocking( evQ, m_src, m_fd, m_numBlocks, m_firstBlock, m_blockStride, m_blockSize );
@@ -105,7 +103,7 @@ public:
 				} else {
         			enQ_fam_scatterv_nonblocking( evQ, m_src, m_fd, m_numBlocks, m_indexes, m_blockSize );
 				}
-			}	
+			}
             if ( ! m_blocking ) {
                 enQ_getTime( evQ, &m_postTime );
             }
@@ -146,7 +144,6 @@ public:
 
 	std::string m_groupName;
 	Shmem::Fam_Descriptor m_fd;
-	EmberMiscLib* m_miscLib;
 
     enum { Init, Alloc, Work, Fini } m_phase;
 

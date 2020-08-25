@@ -1,8 +1,8 @@
-// Copyright 2009-2019 NTESS. Under the terms
+// Copyright 2009-2020 NTESS. Under the terms
 // of Contract DE-NA0003525 with NTESS, the U.S.
 // Government retains certain rights in this software.
 //
-// Copyright (c) 2009-2019, NTESS
+// Copyright (c) 2009-2020, NTESS
 // All rights reserved.
 //
 // Portions are copyright of other developers:
@@ -34,10 +34,18 @@
 #include "emberconstdistrib.h"
 #include "embercomputeev.h"
 #include "emberdetailedcomputeev.h"
+#include "embergettimeev.h"
 #include "libs/emberLib.h"
+
+#define ENGINE_MASK (1<<0)
+#define MOTIF_MASK (1<<1)
+#define MOTIF_START_STOP_MASK (1<<2)
+// #define EVENT_MASK (1<<2)  defined in emberevent.h"
 
 namespace SST {
 namespace Ember {
+
+class EmberEngine;
 
 class EmberGenerator : public SubComponent {
 
@@ -45,19 +53,22 @@ class EmberGenerator : public SubComponent {
 
     typedef std::queue<EmberEvent*> Queue;
 
-    EmberGenerator( Component* owner, Params& params, std::string name ="" );
+	SST_ELI_REGISTER_SUBCOMPONENT_API(SST::Ember::EmberGenerator)
 
-	~EmberGenerator(){
-		delete m_computeDistrib;
-	};
-    
+    EmberGenerator( ComponentId_t id, Params& params ) : SubComponent(id) { assert(0); }
+    EmberGenerator( ComponentId_t id, Params& params, std::string name ="" );
+
+	void setEngine( EmberEngine* );
+
+	~EmberGenerator(){ };
+
     virtual void generate( const SST::Output* output, const uint32_t phase,
         std::queue<EmberEvent*>* evQ ) {
         assert(0);
     }
 
-    virtual bool generate( std::queue<EmberEvent*>& evQ ) { 
-        assert(0); 
+    virtual bool generate( std::queue<EmberEvent*>& evQ ) {
+        assert(0);
     }
 
     virtual void completed( const SST::Output* output, uint64_t time) {
@@ -86,32 +97,13 @@ class EmberGenerator : public SubComponent {
                const char* format, ...)    const
                   __attribute__ ((format (printf, 6, 7))) ;
 
-    void setVerbosePrefix( int _rank = -1 ) {
-        if ( _rank == -1 ) {
-            _rank = rank(); 
-        }
+    void setVerbosePrefix( int rank = -1 ) {
         m_verbosePrefix.str(std::string());
-        m_verbosePrefix << "@t:" << getJobId() << ":" << _rank <<
+        m_verbosePrefix << "@t:" << getJobId() << ":" << rank <<
                     ":EmberEngine:" << getMotifName() << ":@p:@l: ";
     }
 
     std::string getMotifName() { return m_motifName; }
-    void setRank( int rank ) { m_api->setRank( rank ); }
-    void setSize( int size ) { m_api->setSize( size ); }
-    int rank() { 
-        if ( m_api ) {
-            return m_api->getRank(); 
-        } else {
-            return -1;
-        }
-    }
-    int size() { 
-        if ( m_api ) {
-            return m_api->getSize(); 
-        } else { 
-            return -1;
-        }
-    }
     int getJobId()    { return m_jobId; }
     int getMotifNum() { return m_motifNum; }
 
@@ -119,25 +111,22 @@ class EmberGenerator : public SubComponent {
 
     virtual void* memAlloc( size_t );
     virtual void memFree( void* );
-    virtual void* memAddr( void * addr ) {
-        return  m_dataMode == Backing ? addr : NULL;
-    }
+	virtual void memSetBacked() { m_dataMode = Backing; }
     bool haveDetailed() { return m_detailedCompute; }
 
-    Hermes::Interface*  	m_api;
     Thornhill::DetailedCompute*   m_detailedCompute;
     Thornhill::MemoryHeapLink*    m_memHeapLink;
 
+	inline void enQ_getTime( Queue&, uint64_t* time );
     inline void enQ_memAlloc( Queue&, Hermes::MemAddr* addr, size_t length  );
     inline void enQ_compute( Queue&, uint64_t nanoSecondDelay );
     inline void enQ_compute( Queue& q, std::function<uint64_t()> func );
     inline void enQ_detailedCompute( Queue& q, std::string, Params&, std::function<int()> func );
 
-    enum { NoBacking, Backing, BackingZeroed  } m_dataMode; 
-
   private:
-
+    EmberEngine*            m_ee;
     Output* 	        	m_output;
+    enum { NoBacking, Backing, BackingZeroed  } m_dataMode;
     std::string				m_motifName;
     std::ostringstream      m_verbosePrefix;
     Hermes::NodePerf*       m_nodePerf;
@@ -145,7 +134,12 @@ class EmberGenerator : public SubComponent {
     int                     m_motifNum;
     bool                    m_primary;
     EmberComputeDistribution*           m_computeDistrib;
+    uint64_t m_curVirtAddr;
 };
+
+void EmberGenerator::enQ_getTime( Queue& q, uint64_t* time ) {
+	q.push( new EmberGetTimeEvent( &getOutput(), time ) );
+}
 
 void EmberGenerator::enQ_compute( Queue& q, uint64_t delay )
 {
@@ -166,9 +160,18 @@ void EmberGenerator::enQ_detailedCompute( Queue& q, std::string name,
 
 void EmberGenerator::enQ_memAlloc( Queue& q, Hermes::MemAddr* addr, size_t length )
 {
-    assert( m_memHeapLink );
-    addr->setBacking( memAlloc(length) );
-    q.push( new EmberMemAllocEvent( *m_memHeapLink, &getOutput(), addr, length  ) );
+    if ( m_memHeapLink ) {
+        addr->setBacking( memAlloc(length) );
+        q.push( new EmberMemAllocEvent( *m_memHeapLink, &getOutput(), addr, length  ) );
+    } else {
+        if ( length % 16 ) {
+            length += 16;
+            length &= ~(16-1);
+        }
+        *addr = Hermes::MemAddr( m_curVirtAddr, memAlloc( length ) );
+        m_curVirtAddr += length;
+        q.push( new EmberComputeEvent( &getOutput(), 0, m_computeDistrib ) );
+    }
 }
 
 }

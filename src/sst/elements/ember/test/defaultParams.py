@@ -57,8 +57,26 @@ nicParams = {
 
 	"simpleMemoryModel.busBandwidth_Gbs" : 7.8,
 	"simpleMemoryModel.busNumLinks" : 8,
+	"simpleMemoryModel.detailedModel.name" : "firefly.detailedInterface",
 	"maxRecvMachineQsize" : 100,
 	"maxSendMachineQsize" : 100,
+
+    #"numVNs" : 7,
+
+    #"getHdrVN" : 1,
+    #"getRespSmallVN" : 2,
+    #"getRespLargeVN" : 3,
+    #"getRespSize" : 15000,
+
+    #"shmemAckVN": 1 ,
+    #"shmemGetReqVN": 2,
+    #"shmemGetLargeVN": 3,
+    #"shmemGetSmallVN": 4,
+    #"shmemGetThresholdLength": 8,
+    #"shmemPutLargeVN": 5,
+    #"shmemPutSmallVN": 6,
+    #"shmemPutThresholdLength": 8,
+
 }
 
 emberParams = {
@@ -81,6 +99,12 @@ hermesParams = {
 
     "hermesParams.functionSM.defaultEnterLatency" : 30000,
     "hermesParams.functionSM.defaultReturnLatency" : 30000,
+
+    #"hermesParams.functionSM.smallCollectiveVN" : 1,
+    #"hermesParams.functionSM.smallCollectiveSize" : 8,
+
+    #"hermesParams.ctrlMsg.rendezvousVN" : 1,
+    #"hermesParams.ctrlMsg.ackVN" : 1,
 
     "hermesParams.ctrlMsg.shortMsgLength" : 12000,
     "hermesParams.ctrlMsg.matchDelay_ns" : 150,

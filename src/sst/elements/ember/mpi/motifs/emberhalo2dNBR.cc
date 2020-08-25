@@ -1,8 +1,8 @@
-// Copyright 2009-2019 NTESS. Under the terms
+// Copyright 2009-2020 NTESS. Under the terms
 // of Contract DE-NA0003525 with NTESS, the U.S.
 // Government retains certain rights in this software.
 //
-// Copyright (c) 2009-2019, NTESS
+// Copyright (c) 2009-2020, NTESS
 // All rights reserved.
 //
 // Portions are copyright of other developers:
@@ -23,8 +23,8 @@
 
 using namespace SST::Ember;
 
-EmberHalo2DNBRGenerator::EmberHalo2DNBRGenerator(SST::Component* owner, Params& params) :
-	EmberMessagePassingGenerator(owner, params, "Halo2DNBR"),
+EmberHalo2DNBRGenerator::EmberHalo2DNBRGenerator(SST::ComponentId_t id, Params& params) :
+	EmberMessagePassingGenerator(id, params, "Halo2DNBR"),
 	m_loopIndex(0)
 {
 	iterations = (uint32_t) params.find("arg.iterations", 10);
@@ -59,7 +59,7 @@ void EmberHalo2DNBRGenerator::configure()
 {
     if(0 == rank()) {
         output("PingPong, size=%d msgSizeX=%d msgSizeY=%d"
-            " iter=%d nsCompute=%d\n", 
+            " iter=%d nsCompute=%d\n",
             size(),messageSizeX,messageSizeY,iterations,nsCompute);
     }
 
@@ -116,7 +116,7 @@ void EmberHalo2DNBRGenerator::configure()
 		(sendNorth ? "Y" : "N"), procNorth);
 }
 
-bool EmberHalo2DNBRGenerator::generate( std::queue<EmberEvent*>& evQ ) 
+bool EmberHalo2DNBRGenerator::generate( std::queue<EmberEvent*>& evQ )
 {
     if( 0 == m_loopIndex) {
         verbose(CALL_INFO, 1, 0, "rank=%d size=%d\n", rank(),size());

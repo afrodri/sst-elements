@@ -1,8 +1,8 @@
-// Copyright 2009-2019 NTESS. Under the terms
+// Copyright 2009-2020 NTESS. Under the terms
 // of Contract DE-NA0003525 with NTESS, the U.S.
 // Government retains certain rights in this software.
 //
-// Copyright (c) 2009-2019, NTESS
+// Copyright (c) 2009-2020, NTESS
 // All rights reserved.
 //
 // Portions are copyright of other developers:
@@ -31,7 +31,7 @@ void PalaPrefetcher::notifyAccess(const CacheListenerNotification& notify)
 {
     const NotifyAccessType notifyType = notify.getAccessType();
 
-    if (notifyType == EVICT)  // ignore evictions
+    if (notifyType != READ && notifyType != WRITE)
         return;
 
     const NotifyResultType notifyResType = notify.getResultType();
@@ -141,7 +141,7 @@ void PalaPrefetcher::DispatchRequest(Addr targetAddress)
         // Check next address is aligned to a cache line boundary
         assert((targetAddress + (strideReach * stride)) % blockSize == 0);
 
-        ev = new MemEvent(getName(), targetAddress + (strideReach * stride), targetAddress + (strideReach * stride), Command::GetS, getCurrentSimTimeNano());
+        ev = new MemEvent(getName(), targetAddress + (strideReach * stride), targetAddress + (strideReach * stride), Command::GetS);
     }
     else
     {
@@ -158,7 +158,7 @@ void PalaPrefetcher::DispatchRequest(Addr targetAddress)
         {
             output->verbose(CALL_INFO, 2, 0, "Issue prefetch, target address: %" PRIx64 ", prefetch address: %" PRIx64 " (reach out: %" PRIu32 ", stride=%" PRIu32 ")\n",
                         targetAddress, targetPrefetchAddress, (strideReach * stride), stride);
-            ev = new MemEvent(getName(), targetPrefetchAddress, targetPrefetchAddress, Command::GetS, getCurrentSimTimeNano());
+            ev = new MemEvent(getName(), targetPrefetchAddress, targetPrefetchAddress, Command::GetS);
             statPrefetchOpportunities->addData(1);
         }
         else
@@ -212,7 +212,7 @@ void PalaPrefetcher::DispatchRequest(Addr targetAddress)
             {
                 // Create a new read request, we cannot issue a write because the data will get
                 // overwritten and corrupt memory (even if we really do want to do a write)
-                MemEvent* newEv = new MemEvent(getName(), ev->getAddr(), ev->getAddr(), Command::GetS, getCurrentSimTimeNano());
+                MemEvent* newEv = new MemEvent(getName(), ev->getAddr(), ev->getAddr(), Command::GetS);
                 newEv->setSize(blockSize);
                 newEv->setPrefetchFlag(true);
 
@@ -230,11 +230,6 @@ void PalaPrefetcher::DispatchRequest(Addr targetAddress)
     }
 }
 
-PalaPrefetcher::PalaPrefetcher(Component* owner, Params& params) : CacheListener(owner, params)
-{
-    Output out("", 1, 0, Output::STDOUT);
-    out.fatal(CALL_INFO, -1, "%s, Error: SubComponent does not support legacy loadSubComponent call; use new calls (loadUserSubComponent or loadAnonymousSubComponent)\n", getName().c_str());
-}
 
 PalaPrefetcher::PalaPrefetcher(ComponentId_t id, Params& params) : CacheListener(id, params)
 {

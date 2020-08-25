@@ -1,8 +1,8 @@
-// Copyright 2009-2019 NTESS. Under the terms
+// Copyright 2009-2020 NTESS. Under the terms
 // of Contract DE-NA0003525 with NTESS, the U.S.
 // Government retains certain rights in this software.
 //
-// Copyright (c) 2009-2019, NTESS
+// Copyright (c) 2009-2020, NTESS
 // All rights reserved.
 //
 // Portions are copyright of other developers:
@@ -33,7 +33,7 @@ using namespace std;
  */
 class MemEventBase : public SST::Event  {
 public:
- 
+
     typedef std::vector<uint8_t> dataVec;       /** Data Payload type */
 
     // Flags used throughout memHierarchy
@@ -78,6 +78,12 @@ public:
         memFlags_ = event->memFlags_;
     }
 
+    virtual void copyMetadata(MemEventBase* ev) {
+        rqstr_ = ev->rqstr_;
+        flags_ = ev->flags_;
+        memFlags_ = ev->memFlags_;
+    }
+
     /** @return  Unique ID of this MemEvent */
     id_type getID(void) const { return eventID_; }
 
@@ -88,17 +94,17 @@ public:
     Command getCmd(void) const { return cmd_; }
     /** Sets the Command of this MemEvent */
     void setCmd(Command newcmd) { cmd_ = newcmd; }
-    
+
     /** @return the source string - who sent this MemEvent */
     const std::string& getSrc(void) const { return src_; }
     /** Sets the source string - who sent this MemEvent */
     void setSrc(const std::string& src) { src_ = src; }
-    
+
     /** @return the destination string - who receives this MemEvent */
     const std::string& getDst(void) const { return dst_; }
     /** Sets the destination string - who received this MemEvent */
     void setDst(const std::string& dst) { dst_ = dst; }
-    
+
     /** @return the requestor string - whose original request caused this MemEvent */
     const std::string& getRqstr(void) const { return rqstr_; }
     /** Sets the requestor string - whose original request caused this MemEvent */
@@ -110,7 +116,7 @@ public:
      * @param[in] flag  Should be one of the flags 'F_...' defined in MemEventBase */
     void setFlag(uint32_t flag) { flags_ = flags_ | flag; }
     /** Clears the specified flag.
-     * @param[in] flag  
+     * @param[in] flag
      */
     void clearFlag(uint32_t flag) { flags_ = flags_ & (~flag); }
     /** Clears all flags */
@@ -130,28 +136,28 @@ public:
         std::string str;
         str += "[";
         bool addComma = false;
-        if (flags_ & F_LOCKED) { 
-            str += "F_LOCKED"; 
+        if (flags_ & F_LOCKED) {
+            str += "F_LOCKED";
             addComma = true;
         }
-        if (flags_ & F_NONCACHEABLE) { 
+        if (flags_ & F_NONCACHEABLE) {
             if (addComma) str += ", ";
-            str += "F_NONCACHEABLE"; 
+            str += "F_NONCACHEABLE";
             addComma = true;
         }
-        if (flags_ & F_LLSC) { 
+        if (flags_ & F_LLSC) {
             if (addComma) str += ", ";
-            str += "F_LLSC"; 
+            str += "F_LLSC";
             addComma = true;
         }
-        if (flags_ & F_SUCCESS) { 
+        if (flags_ & F_SUCCESS) {
             if (addComma) str += ", ";
-            str += "F_SUCCESS"; 
+            str += "F_SUCCESS";
             addComma = true;
         }
-        if (flags_ & F_NORESPONSE) { 
+        if (flags_ & F_NORESPONSE) {
             if (addComma) str += ", ";
-            str += "F_NORESPONSE"; 
+            str += "F_NORESPONSE";
             addComma = true;
         }
         str += "]";
@@ -160,29 +166,23 @@ public:
 
     /** Return size of the event - for calculating bandwidth used */
     virtual uint32_t getEventSize() { return 0; }
-    
+
     /** Get verbose print of the event */
     virtual std::string getVerboseString() {
         std::ostringstream idstring;
-        idstring << "ID: <" << eventID_.first << "," << eventID_.second << ">";
-        if (BasicCommandClassArr[(int)cmd_] == BasicCommandClass::Response) {
-            idstring << " RespID: <" << responseToID_.first << "," << responseToID_.second << ">";
-        }
+        idstring << "<" << eventID_.first << "," << eventID_.second << "> ";
         std::string cmdStr(CommandString[(int)cmd_]);
         std::ostringstream str;
-        str << " Flags: " << getFlagString() << " MemFlags: 0x" << std::hex << memFlags_;
-        return idstring.str() + " Cmd: " + cmdStr + " Src: " + src_ + " Dst: " + dst_ + " Rqstr: " + rqstr_ + str.str();
+        str << " Flags: " << getFlagString();
+        return idstring.str() + cmdStr + " Src: " + src_ + " Dst: " + dst_ + " Rq: " + rqstr_ + str.str();
     }
 
     /** Get brief print of the event */
     virtual std::string getBriefString() {
         std::string cmdStr(CommandString[(int)cmd_]);
         std::ostringstream idstring;
-        idstring << "ID: <" << eventID_.first << "," << eventID_.second << ">";
-        if (BasicCommandClassArr[(int)cmd_] == BasicCommandClass::Response) {
-            idstring << " RespID: <" << responseToID_.first << "," << responseToID_.second << ">";
-        }
-        return idstring.str() + " Cmd: " + cmdStr + " Src: " + src_ + " Dst: " + dst_;
+        idstring << "<" << eventID_.first << "," << eventID_.second << "> ";
+        return idstring.str() + cmdStr + " Src: " + src_ + " Dst: " + dst_;
     }
 
     virtual bool doDebug(std::set<Addr> &UNUSED(addr)) {
@@ -192,8 +192,8 @@ public:
     virtual Addr getRoutingAddress() {
         return 0;   // Route this as if its address was 0
     }
-    
-    virtual size_t getPayloadSize() { 
+
+    virtual size_t getPayloadSize() {
         return 0; // No payload
     }
 
@@ -225,8 +225,8 @@ public:
         ser & flags_;
         ser & memFlags_;
     }
-     
-    ImplementSerializable(SST::MemHierarchy::MemEventBase);     
+
+    ImplementSerializable(SST::MemHierarchy::MemEventBase);
 };
 
 struct memEventCmp {
@@ -235,20 +235,20 @@ struct memEventCmp {
     }
 };
 
-/* 
+/*
  * Init event type
  */
 
 class MemEventInit : public MemEventBase  {
 public:
-    
+
     enum class InitCommand { Region, Data, Coherence };
 
     /* Init event */
     MemEventInit(std::string src, InitCommand cmd) : MemEventBase(src, Command::NULLCMD), initCmd_(cmd) { }
 
     /* Init events for initializing memory contents */
-    MemEventInit(std::string src, Command cmd, Addr addr, std::vector<uint8_t> &data) : 
+    MemEventInit(std::string src, Command cmd, Addr addr, std::vector<uint8_t> &data) :
         MemEventBase(src, cmd), initCmd_(InitCommand::Data), addr_(addr), payload_(data) { }
 
     InitCommand getInitCmd() { return initCmd_; }
@@ -260,7 +260,7 @@ public:
     virtual MemEventInit* clone(void) override {
         return new MemEventInit(*this);
     }
-    
+
     virtual std::string getVerboseString() override {
         std::string str;
         if (initCmd_ == InitCommand::Region) str = " InitCmd: Region";
@@ -277,7 +277,7 @@ public:
         else if (initCmd_ == InitCommand::Data) str = " InitCmd: Data";
         else if (initCmd_ == InitCommand::Coherence) str = " InitCmd: Coherence";
         else str = " InitCmd: Unknown command";
-        
+
         return MemEventBase::getBriefString() + str;
     }
 
@@ -305,20 +305,32 @@ public:
 
 class MemEventInitCoherence : public MemEventInit  {
 public:
-    
+
     /* Init events for coordintating coherence policies */
-    MemEventInitCoherence(std::string src, Endpoint type, bool inclusive, bool WBAck, Addr lineSize, bool tracksPresence) : 
-        MemEventInit(src, InitCommand::Coherence), type_(type), inclusive_(inclusive), needWBAck_(WBAck), lineSize_(lineSize), tracksPresence_(tracksPresence) { }
+    /*
+     * type: cache, memory, scratchpad, etc.
+     * inclusive: inclusive (true) or noninclusive (false)
+     * sendWBAck: the component always sends WB Acks (if false, the component *can* send them if another component needs it)
+     * recvWBAck: the component expects to receive WB Acks (if false, the component *can* expect to receive them if another component sends them)
+     * lineSize: number of bytes in a line
+     * tracksPresence: whether the component keeps track of whether a line is present elsewhere. Affects whether clean evictions need to happen or not.
+     *
+     */
+    MemEventInitCoherence(std::string src, Endpoint type, bool inclusive, bool sendWBAck, Addr lineSize, bool tracksPresence) :
+        MemEventInit(src, InitCommand::Coherence), type_(type), inclusive_(inclusive), sendWBAck_(sendWBAck), recvWBAck_(false), lineSize_(lineSize), tracksPresence_(tracksPresence) { }
+    MemEventInitCoherence(std::string src, Endpoint type, bool inclusive, bool sendWBAck, bool recvWBAck, Addr lineSize, bool tracksPresence) :
+        MemEventInit(src, InitCommand::Coherence), type_(type), inclusive_(inclusive), sendWBAck_(sendWBAck), recvWBAck_(recvWBAck), lineSize_(lineSize), tracksPresence_(tracksPresence) { }
 
     Endpoint getType() { return type_; }
     bool getInclusive() { return inclusive_; }
-    bool getWBAck() { return needWBAck_; }
+    bool getSendWBAck() { return sendWBAck_; }
+    bool getRecvWBAck() { return recvWBAck_; }
     Addr getLineSize() { return lineSize_; }
     bool getTracksPresence() { return tracksPresence_; }
 
     virtual MemEventInitCoherence* clone(void) override {
         return new MemEventInitCoherence(*this);
-    }   
+    }
 
     virtual std::string getVerboseString() override {
         std::ostringstream str;
@@ -330,7 +342,8 @@ public:
 private:
     Endpoint type_;     // Type of endpoint
     bool inclusive_;    // Whether endpoint is inclusive
-    bool needWBAck_;    // Whether endpoint expects writeback acks
+    bool sendWBAck_;    // Whether endpoint expects writeback acks -> should we send WB acks to the sender?
+    bool recvWBAck_;    // Whether endpoint sends writeback acks -> will we receive WB acks from the sender?
     Addr lineSize_;     // Endpoint's linesize
     bool tracksPresence_;     // Endpoint manages or tracks coherence
 
@@ -341,11 +354,12 @@ public:
         MemEventInit::serialize_order(ser);
         ser & type_;
         ser & inclusive_;
-        ser & needWBAck_;
+        ser & sendWBAck_;
+        ser & recvWBAck_;
         ser & lineSize_;
         ser & tracksPresence_;
     }
-    
+
     ImplementSerializable(SST::MemHierarchy::MemEventInitCoherence);
 };
 
@@ -381,7 +395,7 @@ public:
         ser & region_.interleaveSize;
         ser & setRegion_;
     }
-    
+
     ImplementSerializable(SST::MemHierarchy::MemEventInitRegion);
 };
 

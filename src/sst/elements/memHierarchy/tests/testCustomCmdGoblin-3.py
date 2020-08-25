@@ -1,7 +1,13 @@
 import sst
 import sys
-import ConfigParser, argparse
+import argparse
+try:
+    import ConfigParser
+except ImportError:
+    import configparser as ConfigParser
+
 from utils import *
+from mhlib import componentlist
 
 
 # Parse commandline arguments
@@ -19,15 +25,16 @@ statLevel = args.statlevel
 # Build Configuration Information
 config = Config(cfgFile, verbose=verbose)
 
-print "Configuring Network-on-Chip..."
+print ("Configuring Network-on-Chip...")
 
 router = sst.Component("router", "merlin.hr_router")
 router.addParams(config.getRouterParams())
 router.addParam('id', 0)
+router.setSubComponent("topology","merlin.singlerouter")
 
 # Connect Cores & caches
 for next_core_id in range(config.total_cores):
-    print "Configuring core %d..."%next_core_id
+    print ("Configuring core %d..."%next_core_id)
 
     cpu = sst.Component("cpu%d"%(next_core_id), "miranda.BaseCPU")
     cpu.addParams(config.getCoreConfig(next_core_id))
@@ -55,14 +62,16 @@ for next_core_id in range(config.total_cores):
             config.ring_latency)
 
 # Connect Memory and Memory Controller to the ring
-mem = sst.Component("memory", "memHierarchy.CoherentMemController")
-mem.addParams(config.getMemParams())
+memctrl = sst.Component("memory", "memHierarchy.CoherentMemController")
+memctrl.addParams(config.getMemCtrlParams())
+memory = memctrl.setSubComponent("backend", "memHierarchy.goblinHMCSim")
+memory.addParams(config.getMemParams())
 
 dc = sst.Component("dc", "memHierarchy.DirectoryController")
 dc.addParams(config.getDCParams(0))
 
 connect("mem_link_0",
-        mem, "direct_link",
+        memctrl, "direct_link",
         dc, "memory",
         config.ring_latency)
 
@@ -79,4 +88,4 @@ sst.enableAllStatisticsForAllComponents({"type":"sst.AccumulatorStatistic"})
 
 sst.setStatisticOutput("sst.statOutputConsole")
 
-print "Completed configuring the EX3 model"
+print ("Completed configuring the EX3 model")

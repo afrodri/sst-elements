@@ -1,8 +1,8 @@
-// Copyright 2009-2019 NTESS. Under the terms
+// Copyright 2009-2020 NTESS. Under the terms
 // of Contract DE-NA0003525 with NTESS, the U.S.
 // Government retains certain rights in this software.
 //
-// Copyright (c) 2009-2019, NTESS
+// Copyright (c) 2009-2020, NTESS
 // All rights reserved.
 //
 // Portions are copyright of other developers:
@@ -40,9 +40,9 @@ class EmberShmemGetvGenerator : public EmberShmemGenerator {
     }
 
 public:
-	EmberShmemGetvGenerator(SST::Component* owner, Params& params) :
-		EmberShmemGenerator(owner, params, "ShmemGetv" ), m_phase(0) 
-	{ 
+	EmberShmemGetvGenerator(SST::ComponentId_t id, Params& params) :
+		EmberShmemGenerator(id, params, "ShmemGetv" ), m_phase(0)
+	{
         m_printResults = params.find<bool>("arg.printResults", false );
         int status;
         std::string tname = typeid(TYPE).name();
@@ -51,7 +51,7 @@ public:
 		free(tmp);
 	}
 
-    bool generate( std::queue<EmberEvent*>& evQ) 
+    bool generate( std::queue<EmberEvent*>& evQ)
 	{
         bool ret = false;
         switch ( m_phase ) {
@@ -71,15 +71,15 @@ public:
             break;
 
         case 2:
-            
-			m_src.at<TYPE>( 0 ) = genSeed<TYPE>() + m_my_pe; 
+
+			m_src.at<TYPE>( 0 ) = genSeed<TYPE>() + m_my_pe;
             enQ_barrier_all( evQ );
 
             enQ_getv( evQ, &m_result, m_src, (m_my_pe + 1) % m_num_pes );
             break;
 
         case 3:
-            if ( m_printResults ) 
+            if ( m_printResults )
 			{
                 std::stringstream tmp;
                 tmp << " got="<< m_result << " want=" <<  genSeed<TYPE>() + ((m_my_pe + 1) % 2);
@@ -107,82 +107,74 @@ public:
 
 class EmberShmemGetvIntGenerator : public EmberShmemGetvGenerator<int> {
 public:
-    SST_ELI_REGISTER_SUBCOMPONENT(
+    SST_ELI_REGISTER_SUBCOMPONENT_DERIVED(
         EmberShmemGetvIntGenerator,
         "ember",
         "ShmemGetvIntMotif",
         SST_ELI_ELEMENT_VERSION(1,0,0),
         "SHMEM getv int",
-        "SST::Ember::EmberGenerator"
-
+        SST::Ember::EmberGenerator
     )
 
-    SST_ELI_DOCUMENT_PARAMS(
-    )
+    SST_ELI_DOCUMENT_PARAMS()
 
 public:
-    EmberShmemGetvIntGenerator( SST::Component* owner, Params& params ) :
-        EmberShmemGetvGenerator(owner,  params) { }
+    EmberShmemGetvIntGenerator( SST::ComponentId_t id, Params& params ) :
+        EmberShmemGetvGenerator(id,  params) { }
 };
 
 class EmberShmemGetvLongGenerator : public EmberShmemGetvGenerator<long> {
 public:
-    SST_ELI_REGISTER_SUBCOMPONENT(
+    SST_ELI_REGISTER_SUBCOMPONENT_DERIVED(
         EmberShmemGetvLongGenerator,
         "ember",
         "ShmemGetvLongMotif",
         SST_ELI_ELEMENT_VERSION(1,0,0),
         "SHMEM getv long",
-        "SST::Ember::EmberGenerator"
-
+        SST::Ember::EmberGenerator
     )
 
-    SST_ELI_DOCUMENT_PARAMS(
-    )
+    SST_ELI_DOCUMENT_PARAMS()
 
 public:
-    EmberShmemGetvLongGenerator( SST::Component* owner, Params& params ) :
-        EmberShmemGetvGenerator(owner,  params) { }
+    EmberShmemGetvLongGenerator( SST::ComponentId_t id, Params& params ) :
+        EmberShmemGetvGenerator(id,  params) { }
 };
 
 class EmberShmemGetvDoubleGenerator : public EmberShmemGetvGenerator<double> {
 public:
-    SST_ELI_REGISTER_SUBCOMPONENT(
+    SST_ELI_REGISTER_SUBCOMPONENT_DERIVED(
         EmberShmemGetvDoubleGenerator,
         "ember",
         "ShmemGetvDoubleMotif",
         SST_ELI_ELEMENT_VERSION(1,0,0),
         "SHMEM getv double",
-        "SST::Ember::EmberGenerator"
-
+        SST::Ember::EmberGenerator
     )
 
-    SST_ELI_DOCUMENT_PARAMS(
-    )
+    SST_ELI_DOCUMENT_PARAMS()
 
 public:
-    EmberShmemGetvDoubleGenerator( SST::Component* owner, Params& params ) :
-        EmberShmemGetvGenerator(owner,  params) { }
+    EmberShmemGetvDoubleGenerator( SST::ComponentId_t id, Params& params ) :
+        EmberShmemGetvGenerator(id,  params) { }
 };
 
 class EmberShmemGetvFloatGenerator : public EmberShmemGetvGenerator<float> {
 public:
-    SST_ELI_REGISTER_SUBCOMPONENT(
+    SST_ELI_REGISTER_SUBCOMPONENT_DERIVED(
         EmberShmemGetvFloatGenerator,
         "ember",
         "ShmemGetvFloatMotif",
         SST_ELI_ELEMENT_VERSION(1,0,0),
         "SHMEM getv float",
-        "SST::Ember::EmberGenerator"
-
+        SST::Ember::EmberGenerator
     )
 
-    SST_ELI_DOCUMENT_PARAMS(
-    )
+    SST_ELI_DOCUMENT_PARAMS()
 
 public:
-    EmberShmemGetvFloatGenerator( SST::Component* owner, Params& params ) :
-        EmberShmemGetvGenerator(owner,  params) { }
+    EmberShmemGetvFloatGenerator( SST::ComponentId_t id, Params& params ) :
+        EmberShmemGetvGenerator(id,  params) { }
 };
 
 }

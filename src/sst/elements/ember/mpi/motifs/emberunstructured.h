@@ -1,8 +1,8 @@
-// Copyright 2009-2019 NTESS. Under the terms
+// Copyright 2009-2020 NTESS. Under the terms
 // of Contract DE-NA0003525 with NTESS, the U.S.
 // Government retains certain rights in this software.
 //
-// Copyright (c) 2009-2019, NTESS
+// Copyright (c) 2009-2020, NTESS
 // All rights reserved.
 //
 // This file is part of the SST software package. For license
@@ -22,13 +22,13 @@ namespace Ember {
 class EmberUnstructuredGenerator : public EmberMessagePassingGenerator {
 
 public:
-    SST_ELI_REGISTER_SUBCOMPONENT(
+    SST_ELI_REGISTER_SUBCOMPONENT_DERIVED(
         EmberUnstructuredGenerator,
         "ember",
         "UnstructuredMotif",
         SST_ELI_ELEMENT_VERSION(1,0,0),
         "NetworkSim: Performs an Unstructured Communication Motif based on an input graph",
-        "SST::Ember::EmberGenerator"
+        SST::Ember::EmberGenerator
     )
 
     SST_ELI_DOCUMENT_PARAMS(
@@ -37,7 +37,7 @@ public:
         {   "arg.graphfile",        "Name of the file the includes the communication graph",        "-1"},
         {   "arg.p_size",           "Sets the problem size",            "10000"},
         {   "arg.fields_per_cell",  "Specify how many variables are being computed per cell (this is one of the dimensions in message size. Default is 1", "1"},
-        {   "arg.datatype_width",   "Specify the size of a single variable, single grid point, typically 8 for double, 4 for float, default is 8 (double). This scales message size to ensure byte count is correct.", "8"},    
+        {   "arg.datatype_width",   "Specify the size of a single variable, single grid point, typically 8 for double, 4 for float, default is 8 (double). This scales message size to ensure byte count is correct.", "8"},
     )
 
     SST_ELI_DOCUMENT_STATISTICS(
@@ -66,7 +66,7 @@ public:
 
 
 public:
-	EmberUnstructuredGenerator(SST::Component* owner, Params& params);
+	EmberUnstructuredGenerator(SST::ComponentId_t, Params& params);
 	~EmberUnstructuredGenerator() {}
 	void configure();
 	bool generate( std::queue<EmberEvent*>& evQ );

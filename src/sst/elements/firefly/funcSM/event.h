@@ -1,8 +1,8 @@
-// Copyright 2013-2018 NTESS. Under the terms
+// Copyright 2013-2020 NTESS. Under the terms
 // of Contract DE-NA0003525 with NTESS, the U.S.
 // Government retains certain rights in this software.
 //
-// Copyright (c) 2013-2018, NTESS
+// Copyright (c) 2013-2020, NTESS
 // All rights reserved.
 //
 // Portions are copyright of other developers:
@@ -30,7 +30,7 @@ class InitStartEvent : public Event {
   public:
     InitStartEvent()
     { }
-    
+
     NotSerializable(InitStartEvent)
 };
 
@@ -38,7 +38,7 @@ class FiniStartEvent : public Event {
   public:
     FiniStartEvent()
     { }
-    
+
     NotSerializable(FiniStartEvent)
 };
 
@@ -51,7 +51,7 @@ class RankStartEvent : public Event {
 
     MP::Communicator group;
     int* rank;
-    
+
     NotSerializable(RankStartEvent)
 };
 
@@ -64,7 +64,7 @@ class SizeStartEvent : public Event {
 
     MP::Communicator group;
     int* size;
-    
+
     NotSerializable(SizeStartEvent)
 };
 
@@ -72,7 +72,7 @@ class MakeProgressStartEvent : public Event {
   public:
     MakeProgressStartEvent()
     { }
-    
+
     NotSerializable(InitStartEvent)
 };
 
@@ -83,7 +83,7 @@ class BarrierStartEvent : public Event {
     { }
 
     MP::Communicator group;
-    
+
     NotSerializable(BarrierStartEvent)
 };
 
@@ -93,11 +93,11 @@ class RecvStartEvent : public Event {
     RecvStartEvent(
             const Hermes::MemAddr& _buf, uint32_t _count,
             MP::PayloadDataType _dtype, MP::RankID _src,
-            uint32_t _tag, MP::Communicator _group, 
+            uint32_t _tag, MP::Communicator _group,
             MP::MessageRequest* _req, MP::MessageResponse* _resp ) :
         buf( _buf ),
         count( _count ),
-        dtype( _dtype ),      
+        dtype( _dtype ),
         src( _src ),
         tag( _tag ),
         group( _group ),
@@ -112,7 +112,7 @@ class RecvStartEvent : public Event {
     MP::Communicator        group;
     MP::MessageResponse*    resp;
     MP::MessageRequest*     req;
-    
+
     NotSerializable(RecvStartEvent)
 };
 
@@ -123,11 +123,11 @@ class SendStartEvent : public Event {
     SendStartEvent(
                 const Hermes::MemAddr& _buf, uint32_t _count,
                 MP::PayloadDataType _dtype, MP::RankID _dest,
-                uint32_t _tag, MP::Communicator _group, 
+                uint32_t _tag, MP::Communicator _group,
                 MP::MessageRequest* _req ) :
         buf( _buf ),
         count( _count ),
-        dtype( _dtype ),      
+        dtype( _dtype ),
         dest( _dest ),
         tag( _tag ),
         group( _group ),
@@ -140,7 +140,7 @@ class SendStartEvent : public Event {
     uint32_t                tag;
     MP::Communicator        group;
     MP::MessageRequest*     req;
-    
+
     NotSerializable(SendStartEvent)
 };
 
@@ -160,9 +160,9 @@ class CollectiveStartEvent : public Event {
         op(_op),
         root(_root),
         group(_group),
-        type( _type ) 
+        type( _type )
     {}
-    
+
     const char* typeName() {
         switch( type ) {
           case Allreduce:
@@ -183,8 +183,57 @@ class CollectiveStartEvent : public Event {
     MP::RankID  root;
     MP::Communicator group;
     Type  type;
-    
+
     NotSerializable(CollectiveStartEvent)
+};
+
+class ScattervStartEvent : public Event {
+
+  public:
+    ScattervStartEvent(
+               const Hermes::MemAddr& sendBuf, int sendCnt, MP::PayloadDataType sendType,
+               const Hermes::MemAddr& recvBuf, int recvCnt, MP::PayloadDataType recvType,
+               MP::RankID root, MP::Communicator group ) :
+        sendBuf(sendBuf),
+        sendCnt(sendCnt),
+        sendType(sendType),
+        sendCntPtr(0),
+        sendDisplsPtr(0),
+        recvBuf(recvBuf),
+        recvCnt(recvCnt),
+        recvType(recvType),
+        root(root),
+        group(group)
+    {}
+
+    ScattervStartEvent(
+               const Hermes::MemAddr& sendBuf, int* sendCntPtr, int* displs, MP::PayloadDataType sendType,
+               const Hermes::MemAddr& recvBuf, int recvCnt, MP::PayloadDataType recvType,
+               MP::RankID root, MP::Communicator group ) :
+        sendBuf(sendBuf),
+        sendCntPtr(sendCntPtr),
+        sendDisplsPtr(displs),
+        sendType(sendType),
+        recvBuf(recvBuf),
+        recvCnt(recvCnt),
+        recvType(recvType),
+        root(root),
+        group(group)
+    {}
+
+    Hermes::MemAddr sendBuf;
+    Hermes::MemAddr recvBuf;
+    uint32_t sendCnt;
+    uint32_t recvCnt;
+    MP::PayloadDataType sendType;
+    MP::PayloadDataType recvType;
+    MP::RankID  root;
+    MP::Communicator group;
+
+    int* sendCntPtr;
+    int* sendDisplsPtr;
+
+    NotSerializable(ScattervStartEvent)
 };
 
 class GatherBaseStartEvent : public Event {
@@ -204,7 +253,7 @@ class GatherBaseStartEvent : public Event {
         root(_root),
         group(_group)
     {}
-    
+
     Hermes::MemAddr sendbuf;
     Hermes::MemAddr recvbuf;
     uint32_t sendcnt;
@@ -212,7 +261,7 @@ class GatherBaseStartEvent : public Event {
     MP::PayloadDataType recvtype;
     MP::RankID  root;
     MP::Communicator group;
-    
+
     NotSerializable(GatherBaseStartEvent)
 };
 
@@ -227,7 +276,7 @@ class GatherStartEvent : public GatherBaseStartEvent {
         GatherBaseStartEvent( sendbuf, sendcnt, sendtype,
             recvbuf, recvtype, root, group ),
             recvcntPtr( _recvcnt),
-            displsPtr( _displs ) 
+            displsPtr( _displs )
     { }
 
     GatherStartEvent(
@@ -240,7 +289,7 @@ class GatherStartEvent : public GatherBaseStartEvent {
             recvbuf, recvtype, root, group ),
             recvcntPtr( 0 ),
             displsPtr( 0 ),
-            recvcnt( _recvcnt) 
+            recvcnt( _recvcnt)
     { }
 
     GatherStartEvent(
@@ -253,7 +302,7 @@ class GatherStartEvent : public GatherBaseStartEvent {
             recvbuf, recvtype, 0, group ),
             recvcntPtr( 0 ),
             displsPtr( 0 ),
-            recvcnt( _recvcnt) 
+            recvcnt( _recvcnt)
     { }
 
     GatherStartEvent(
@@ -277,10 +326,10 @@ class GatherStartEvent : public GatherBaseStartEvent {
 class AlltoallStartEvent: public Event {
   public:
     AlltoallStartEvent(
-            const Hermes::MemAddr& _sendbuf, uint32_t _sendcnt, 
-            MP::PayloadDataType _sendtype, 
-            const Hermes::MemAddr& _recvbuf, uint32_t _recvcnt, 
-            MP::PayloadDataType _recvtype, 
+            const Hermes::MemAddr& _sendbuf, uint32_t _sendcnt,
+            MP::PayloadDataType _sendtype,
+            const Hermes::MemAddr& _recvbuf, uint32_t _recvcnt,
+            MP::PayloadDataType _recvtype,
             MP::Communicator _group  ) :
         sendbuf( _sendbuf ),
         sendcnt( _sendcnt ),
@@ -291,15 +340,15 @@ class AlltoallStartEvent: public Event {
         recvcnts( NULL ),
         recvtype( _recvtype ),
         group( _group )
-    { } 
+    { }
 
     AlltoallStartEvent(
-            const Hermes::MemAddr& _sendbuf, void* _sendcnts,  
+            const Hermes::MemAddr& _sendbuf, void* _sendcnts,
             void* _senddispls,
-            MP::PayloadDataType _sendtype, 
-            const Hermes::MemAddr& _recvbuf, void* _recvcnts, 
+            MP::PayloadDataType _sendtype,
+            const Hermes::MemAddr& _recvbuf, void* _recvcnts,
             void* _recvdispls,
-            MP::PayloadDataType _recvtype, 
+            MP::PayloadDataType _recvtype,
             MP::Communicator _group ) :
         sendbuf( _sendbuf ),
         sendcnts( _sendcnts ),
@@ -310,7 +359,7 @@ class AlltoallStartEvent: public Event {
         recvdispls( _recvdispls ),
         recvtype( _recvtype ),
         group( _group )
-    { } 
+    { }
 
     Hermes::MemAddr            sendbuf;
     uint32_t                sendcnt;
@@ -370,7 +419,7 @@ class WaitStartEvent : public Event {
 
 class TestanyStartEvent : public Event {
   public:
-    TestanyStartEvent( int count, MP::MessageRequest req[], 
+    TestanyStartEvent( int count, MP::MessageRequest req[],
                             int* index, int* flag, MP::MessageResponse* resp ) :
         count( count ),
         req( req ),
@@ -390,7 +439,7 @@ class TestanyStartEvent : public Event {
 
 class WaitAnyStartEvent : public Event {
   public:
-    WaitAnyStartEvent( int _count, MP::MessageRequest _req[], 
+    WaitAnyStartEvent( int _count, MP::MessageRequest _req[],
                             int* _index, MP::MessageResponse* _resp ) :
         count( _count ),
         req( _req ),
@@ -408,7 +457,7 @@ class WaitAnyStartEvent : public Event {
 
 class WaitAllStartEvent : public Event {
   public:
-    WaitAllStartEvent( int _count, MP::MessageRequest _req[], 
+    WaitAllStartEvent( int _count, MP::MessageRequest _req[],
                             MP::MessageResponse* _resp[] ) :
         count( _count ),
         req( _req ),
@@ -443,7 +492,7 @@ class CommSplitStartEvent : public Event {
 
 class CommCreateStartEvent : public Event {
   public:
-    CommCreateStartEvent( MP::Communicator _oldComm, size_t _nRanks, 
+    CommCreateStartEvent( MP::Communicator _oldComm, size_t _nRanks,
                 int* _ranks, MP::Communicator* _newComm ) :
         oldComm(_oldComm),
         nRanks( _nRanks ),

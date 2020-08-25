@@ -1,18 +1,18 @@
 import sys
 
 class Buffer:
-	def __init__(self):
-		self.buffer = ''
-		self.offset = 0
-	def write( self, data ):
-		self.buffer += data
-	def readline( self ):
-		end = self.offset
-		while end < len(self.buffer) and self.buffer[end] != '\n':
-			end += 1	
-		start = self.offset
-		self.offset = end + 1
-		return self.buffer[start:self.offset]
+    def __init__(self):
+        self.buffer = ''
+        self.offset = 0
+    def write( self, data ):
+        self.buffer += data
+    def readline( self ):
+        end = self.offset
+        while end < len(self.buffer) and self.buffer[end] != '\n':
+            end += 1
+        start = self.offset
+        self.offset = end + 1
+        return self.buffer[start:self.offset]
 
 class ParseLoadFile:
 
@@ -31,7 +31,6 @@ class ParseLoadFile:
             if key == '[JOB_ID]':
                 self.stuff = self.stuff + [{ 'jobid': int(value) }]
                 self.stuff[-1]['motifs'] = [] 
-                self.stuff[-1]['motif_api'] = '' 
                 self.stuff[-1]['params'] = {} 
             elif key == '[NID_LIST]':
                 value = ''.join(value.split())
@@ -52,12 +51,10 @@ class ParseLoadFile:
                     self.stuff[-1]['params'][key] = self.generateNidList( value )
                 else:
                     self.stuff[-1]['params'][key] = value
-            elif key == '[MOTIF_API]':
-                self.stuff[-1]['motif_api'] = value.strip()
             elif key == '[MOTIF]':
                 self.stuff[-1]['motifs'] = self.stuff[-1]['motifs'] + [value] 
             else:
-                sys.exit('ERROR: unknown key {0}'.format(key))
+                print('Warning: unknown key {0}'.format(key))
 
         self.fp.close() 
 
@@ -73,7 +70,7 @@ class ParseLoadFile:
 
         return module.generate( args.split(')',1)[0] ) 
 
-    def next(self):
+    def __next__(self):
 
         if len(self.stuff) == 0:
             raise StopIteration
@@ -84,10 +81,11 @@ class ParseLoadFile:
             if 'num_cores' in self.stuff[0]:
                 numCores = self.stuff[0]['num_cores']
             params = self.stuff[0]['params']
-            motif_api = self.stuff[0]['motif_api']
             motifs = self.stuff[0]['motifs']
             self.stuff.pop(0)
-            return jobid, nidlist, numCores, params, motif_api, motifs 
+            return jobid, nidlist, numCores, params, motifs 
+
+    next = __next__
 
     def substitute( self, line, variables ):
         retval = ''
@@ -102,18 +100,18 @@ class ParseLoadFile:
         return retval
 
     def preprocess( self, vars ):
-		while True:
-			line = self.fp.readline()
-			if len(line) > 0:
-				if line[0] != '#' and not line.isspace():
-					if line[0:len('[VAR]')] == '[VAR]':
-						tag, rem = line.split(' ',1);
-						var,value = rem.split('=');
-						vars[var] = value.rstrip()
-					else:
-						self.buffer.write( self.substitute(line,vars) )
-			else:
-				return
+        while True:
+            line = self.fp.readline()
+            if len(line) > 0:
+                if line[0] != '#' and not line.isspace():
+                    if line[0:len('[VAR]')] == '[VAR]':
+                        tag, rem = line.split(' ',1);
+                        var,value = rem.split('=');
+                        vars[var] = value.rstrip()
+                    else:
+                        self.buffer.write( self.substitute(line,vars) )
+            else:
+                return
 
 
     def getKeyValue( self ):
@@ -128,11 +126,11 @@ class ParseLoadFile:
         rem = '' 
         try: 
             tag, rem = self.lastLine.split(' ',1);
-            rem = rem.replace('\n', '')
+            rem = rem.replace('\n', ' ')
         except ValueError:
             tag = self.lastLine
 
-        tag = tag.replace('\n', '')
+        tag = tag.replace('\n', ' ')
        
         value = value + rem
         while True:
@@ -143,7 +141,7 @@ class ParseLoadFile:
             if self.lastLine[0] == '[':
                 break
             else:
-                value = value + self.lastLine.replace('\n','') 
+                value = value + self.lastLine.replace('\n',' ') 
 
         return tag, value
 

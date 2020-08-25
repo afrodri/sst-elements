@@ -1,8 +1,8 @@
-// Copyright 2009-2019 NTESS. Under the terms
+// Copyright 2009-2020 NTESS. Under the terms
 // of Contract DE-NA0003525 with NTESS, the U.S.
 // Government retains certain rights in this software.
 //
-// Copyright (c) 2009-2019, NTESS
+// Copyright (c) 2009-2020, NTESS
 // All rights reserved.
 //
 // Portions are copyright of other developers:
@@ -30,12 +30,12 @@
 
 
 using namespace SST;
-using namespace SST::n_Bank;
+using namespace SST::CramSim;
 
 c_TxnGenBase::c_TxnGenBase(ComponentId_t x_id, Params& x_params) :
         Component(x_id) {
 
-    
+
     int verbosity = x_params.find<int>("verbose", 0);
     output = new SST::Output("CramSim.TxnGen[@f:@l:@p] ",
                              verbosity, 0, SST::Output::STDOUT);
@@ -73,7 +73,7 @@ c_TxnGenBase::c_TxnGenBase(ComponentId_t x_id, Params& x_params) :
                   << std::endl;
         //exit(-1);
     }
-    
+
     uint32_t k_numBytesPerTransaction = x_params.find<std::uint32_t>("numBytesPerTransaction", 32, l_found);
     if (!l_found) {
         std::cout << "TxnGen:: numBytesPerTransaction is missing...  exiting"
@@ -81,7 +81,7 @@ c_TxnGenBase::c_TxnGenBase(ComponentId_t x_id, Params& x_params) :
         exit(-1);
     }
     m_sizeOffset = (uint)log2(k_numBytesPerTransaction);
-    
+
     /*---- CONFIGURE LINKS ----*/
 
     // request-related links
@@ -141,28 +141,33 @@ void c_TxnGenBase::finish()
 }
 
 bool c_TxnGenBase::clockTic(Cycle_t) {
-    
+
     m_simCycle++;
 
     createTxn();
 
     for(int i=0;i<k_numTxnPerCycle;i++) {
-        if(k_maxOutstandingReqs==0 || m_numOutstandingReqs<k_maxOutstandingReqs) {
-
-            readResponse();
-            
-            if(sendRequest()==false)
-                break;
-            
-            m_numOutstandingReqs++;
-            m_numTxns++;
-        } else
+        if (!readResponse())
             break;
+
+        m_numTxns++;
 
         if(k_maxTxns>0 && m_numTxns>=k_maxTxns) {
             primaryComponentOKToEndSim();
             return true;
         }
+    }
+
+    for(int i=0;i<k_numTxnPerCycle;i++) {
+        if(k_maxOutstandingReqs==0 || m_numOutstandingReqs<k_maxOutstandingReqs) {
+
+            if(sendRequest()==false)
+                break;
+
+            m_numOutstandingReqs++;
+        } else
+            break;
+
     }
     return false;
 }
@@ -187,23 +192,23 @@ void c_TxnGenBase::handleResEvent(SST::Event* ev) {
 
         m_numOutstandingReqs--;
         assert(m_numOutstandingReqs>=0);
-    
+
 
 	m_txnResQ.push_back(l_txn);
-        
+
         delete l_txnResEventPtr;
         uint64_t l_currentCycle = m_simCycle;
         uint64_t l_seqnum=l_txn->getSeqNum();
-        
-        
+
+
         assert(m_outstandingReqs.find(l_seqnum)!=m_outstandingReqs.end());
         SimTime_t l_latency=l_currentCycle-m_outstandingReqs[l_seqnum];
-        
+
         if(l_txn->isRead())
             s_readTxnsLatency->addData(l_latency);
         else
             s_writeTxnsLatency->addData(l_latency);
-        
+
         s_txnsLatency->addData(l_latency);
 
 #ifdef __SST_DEBUG_OUTPUT__
@@ -252,17 +257,17 @@ bool c_TxnGenBase::sendRequest()
 
         c_TxnReqEvent* l_txnReqEvPtr = new c_TxnReqEvent();
         l_txnReqEvPtr->m_payload = m_txnReqQ.front().first;
-        m_txnReqQ.pop_front(); 
+        m_txnReqQ.pop_front();
 
         assert(m_memLink!=NULL);
         m_memLink->send(l_txnReqEvPtr);
-        
+
 
         c_Transaction *l_txn=l_txnReqEvPtr->m_payload;
     #ifdef __SST_DEBUG_OUTPUT__
         output->verbose(CALL_INFO,1,0,"[cycle:%lld] addr: 0x%x isRead:%d seqNum:%lld\n",l_cycle,l_txn->getAddress(),l_txn->isRead(),l_txn->getSeqNum());
-    #endif    
-        
+    #endif
+
         m_outstandingReqs.insert(std::pair<uint64_t, uint64_t>(l_txn->getSeqNum(),l_cycle));
         return true;
     }
@@ -271,7 +276,7 @@ bool c_TxnGenBase::sendRequest()
 }
 
 
-void c_TxnGenBase::readResponse() {
+bool c_TxnGenBase::readResponse() {
 	if (m_txnResQ.size() > 0) {
 		c_Transaction* l_txn = m_txnResQ.front();
 		delete l_txn;
@@ -279,9 +284,11 @@ void c_TxnGenBase::readResponse() {
 		m_txnResQ.pop_front();
 		// std::cout << "TxnGen::readResponse() Transaction printed: Addr-"
 		// 		<< l_txn->getAddress() << std::endl;
+                return true;
 	} else {
 		// std::cout << "TxnGen::readResponse(): No transactions in res q to read"
 		// 		<< std::endl;
+                return false;
 	}
 }
 

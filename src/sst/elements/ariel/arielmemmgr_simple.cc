@@ -1,8 +1,8 @@
-// Copyright 2009-2019 NTESS. Under the terms
+// Copyright 2009-2020 NTESS. Under the terms
 // of Contract DE-NA0003525 with NTESS, the U.S.
 // Government retains certain rights in this software.
 //
-// Copyright (c) 2009-2019, NTESS
+// Copyright (c) 2009-2020, NTESS
 // All rights reserved.
 //
 // Portions are copyright of other developers:
@@ -20,9 +20,9 @@
 
 using namespace SST::ArielComponent;
 
-ArielMemoryManagerSimple::ArielMemoryManagerSimple(ComponentId_t id, Params& params) : 
+ArielMemoryManagerSimple::ArielMemoryManagerSimple(ComponentId_t id, Params& params) :
             ArielMemoryManagerCache(id, params) {
-    
+
     pageSize = (uint64_t) params.find<uint64_t>("pagesize0", 4096);
     output->verbose(CALL_INFO, 2, 0, "Page size is %" PRIu64 "\n", pageSize);
 
@@ -42,7 +42,7 @@ ArielMemoryManagerSimple::ArielMemoryManagerSimple(ComponentId_t id, Params& par
         output->verbose(CALL_INFO, 1, 0, "Populating page table from %s...\n", popFilePath.c_str());
         populatePageTable(popFilePath, &pageTable, &freePages, pageSize);
     }
-    
+
 }
 
 ArielMemoryManagerSimple::~ArielMemoryManagerSimple() {
@@ -50,7 +50,7 @@ ArielMemoryManagerSimple::~ArielMemoryManagerSimple() {
 
 
 void ArielMemoryManagerSimple::allocate(const uint64_t size, const uint32_t level, const uint64_t virtualAddress) {
-        // Simple manager ignores 'level' parameter	
+        // Simple manager ignores 'level' parameter
 
     output->verbose(CALL_INFO, 4, 0, "Requesting a memory allocation of %" PRIu64 " bytes, Virtual mapping=%" PRIu64 "\n",
         size, virtualAddress);
@@ -94,6 +94,10 @@ uint64_t ArielMemoryManagerSimple::translateAddress(uint64_t virtAddr) {
     // If translation is disabled, then just return address
     if( ! translationEnabled ) {
         return virtAddr;
+    }
+
+    if( output->getVerboseLevel() > 15 ) {
+	printTable();
     }
 
     // Keep track of how many translations we are performing
@@ -158,4 +162,18 @@ void ArielMemoryManagerSimple::printStats() {
 
     output->output("- Bytes               %" PRIu64 "\n",
         ((uint64_t) pageTable.size()) * ((uint64_t) pageSize));
+}
+
+void ArielMemoryManagerSimple::printTable() {
+
+    	output->output("---------------------------------------------------------------------\n");
+	output->verbose(CALL_INFO, 16, 0, "Page Table Map:\n");
+
+	for( auto table_itr : pageTable ) {
+		output->verbose(CALL_INFO, 16, 0, "-> VA: %15" PRIu64 " -> PA: %15" PRIu64 "\n",
+			table_itr.first, table_itr.second);
+	}
+
+    	output->output("---------------------------------------------------------------------\n");
+
 }

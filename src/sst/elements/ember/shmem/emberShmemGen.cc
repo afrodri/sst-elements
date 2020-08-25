@@ -1,8 +1,8 @@
-// Copyright 2009-2019 NTESS. Under the terms
+// Copyright 2009-2020 NTESS. Under the terms
 // of Contract DE-NA0003525 with NTESS, the U.S.
 // Government retains certain rights in this software.
 //
-// Copyright (c) 2009-2019, NTESS
+// Copyright (c) 2009-2020, NTESS
 // All rights reserved.
 //
 // Portions are copyright of other developers:
@@ -14,24 +14,22 @@
 // distribution.
 
 #include <sst_config.h>
-#include <sst/core/component.h>
 
 #include "emberShmemGen.h"
 
 using namespace SST;
 using namespace SST::Ember;
 
-EmberShmemGenerator::EmberShmemGenerator( 
-            Component* owner, Params& params, std::string name) :
-    EmberGenerator(owner, params, name )
-{
-}
+EmberShmemGenerator::EmberShmemGenerator(
+            ComponentId_t id, Params& params, std::string name) :
+    EmberGenerator(id, params, name )
+{ }
 
-EmberShmemGenerator::~EmberShmemGenerator()
+void EmberShmemGenerator::setup()
 {
-}
-
-void EmberShmemGenerator::completed(const SST::Output* output,
-        uint64_t time )
-{
+    m_shmem = static_cast<EmberShmemLib*>(getLib("shmem"));
+    assert(m_shmem);
+    m_shmem->initOutput( &getOutput() );
+    m_miscLib = static_cast<EmberMiscLib*>(getLib("misc"));
+    assert(m_miscLib);
 }

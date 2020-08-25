@@ -34,7 +34,7 @@ memclock = "500 MHz"
 memDebug = 0
 memDebugLevel = 6
 
-rank_size = 512 / PIMs
+rank_size = 512 // PIMs
 interleave_size = 1024*4
 corecount = (CPUQuads + (PIMQuads * PIMs)) * 4
 
@@ -192,14 +192,8 @@ def doQuad(quad, cores, rtr, rtrPort, netAddr):
         "associativity": 16,
         "cache_line_size": 64,
         "access_latency_cycles": 23,
-        "low_network_links": 1,
-        "high_network_links": 1,
         "mshr_num_entries" : 4096, #64,   # TODO: Cesar will update
-        "L1": 0,
-        "directory_at_next_level": 1,
-        "network_address": netAddr,
         "network_bw": coreNetBW,
-        "statistics": 1,
         "debug_level" : 6,
         "debug": memDebug
         })
@@ -246,16 +240,13 @@ def doVS(num, cpu) :
     sst.popNamePrefix()
 
 def doFakeDC(rtr, nextPort, netAddr, dcNum):
-    memory = sst.Component("fake_memory", "memHierarchy.MemController")
-    memory.addParams({
-            "coherence_protocol": coherence_protocol,
-            "rangeStart": 0,
-            "backend" : "memHierarchy.simpleMem",
-            "backend.mem_size": str(rank_size) + "MiB",
+    memctrl = sst.Component("fake_memory", "memHierarchy.MemController")
+    memctrl.addParams({
             "clock": memclock,
-            "statistics": 1,
             "debug": memDebug
             })
+    memory = memctrl.setSubComponent("backend", "memHierarchy.simpleMem")
+    memory.addParams({ "mem_size": str(rank_size) + "MiB" })
     # use a fixed latency
     memory.addParams(memParams)
     # add fake DC
@@ -266,43 +257,39 @@ def doFakeDC(rtr, nextPort, netAddr, dcNum):
             "network_bw": memNetBW,
             "addr_range_start": 0,
             "addr_range_end":  0,
-            "interleave_size": 0/1024,    # in KB
+            "interleave_size": 0//1024,    # in KB
             "interleave_step": 0,         # in KB
             "entry_cache_size": 128*1024, #Entry cache size of mem/blocksize
             "clock": memclock,
             "debug": memDebug,
-            "statistics": 1,
-            "network_address": netAddr
             })
     #wire up
     memLink = sst.Link("fake_mem%d_link"%dcNum)
-    memLink.connect((memory, "direct_link", busLat), (dc, "memory", busLat))
+    memLink.connect((memctrl, "direct_link", busLat), (dc, "memctrl", busLat))
     netLink = sst.Link("fake_dc%d_netlink"%dcNum)
     netLink.connect((dc, "network", netLat), (rtr, "port%d"%(nextPort), netLat))
 
 def doDC(rtr, nextPort, netAddr, dcNum):
     start_pos = (dcNum * interleave_size);
-    interleave_step = PIMs*(interleave_size/1024) # in KB
+    interleave_step = PIMs*(interleave_size//1024) # in KB
     end_pos = start_pos + ((512*1024*1024)-(interleave_size*(PIMs-1))) 
 
     # add memory
     memory = sst.Component("memory", "memHierarchy.MemController")
     memory.addParams({
-            "coherence_protocol": coherence_protocol,
-            "rangeStart": start_pos,
-            "backend.mem_size": rank_size,
             "clock": memclock,
-            "statistics": 1,
             "debug": memDebug
             })
     if (useVaultSim == 1):
         # use vaultSim
-        memory.addParams({"backend" : "memHierarchy.vaultsim"})
+        memory = memctrl.setSubComponent("backend", "memHierarchy.vaultsim")
         doVS(dcNum, memory)
     else:
         # use a fixed latency
+        memory = memctrl.setSubComponent("backend", "memHierarchy.simpleMem")
         memory.addParams(memParams)
 
+    memory.addParams({ "mem_size" : rank_size })
     # add DC
     dc = sst.Component("dc_nid%d"%netAddr, "memHierarchy.DirectoryController")
     print("DC nid%d\n %x to %x\n iSize %x iStep %x" % (netAddr, start_pos, end_pos, interleave_size, interleave_step))
@@ -311,17 +298,15 @@ def doDC(rtr, nextPort, netAddr, dcNum):
             "network_bw": memNetBW,
             "addr_range_start": start_pos,
             "addr_range_end":  end_pos,
-            "interleave_size": interleave_size/1024,    # in KB
+            "interleave_size": interleave_size//1024,    # in KB
             "interleave_step": interleave_step,         # in KB
             "entry_cache_size": 128*1024, #Entry cache size of mem/blocksize
             "clock": memclock,
             "debug": memDebug,
-            "statistics": 1,
-            "network_address": netAddr
             })
     #wire up
     memLink = sst.Link("mem%d_link"%dcNum)
-    memLink.connect((memory, "direct_link", busLat), (dc, "memory", busLat))
+    memLink.connect((memctrl, "direct_link", busLat), (dc, "memory", busLat))
     netLink = sst.Link("dc%d_netlink"%dcNum)
     netLink.connect((dc, "network", netLat), (rtr, "port%d"%(nextPort), netLat))
 

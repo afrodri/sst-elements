@@ -1,10 +1,10 @@
-// Copyright 2009-2019 NTESS. Under the terms
+// Copyright 2009-2020 NTESS. Under the terms
 // of Contract DE-NA0003525 with NTESS, the U.S.
 // Government retains certain rights in this software.
-// 
-// Copyright (c) 2009-2019, NTESS
+//
+// Copyright (c) 2009-2020, NTESS
 // All rights reserved.
-// 
+//
 // Portions are copyright of other developers:
 // See the file CONTRIBUTORS.TXT in the top level directory
 // the distribution for more information.
@@ -41,7 +41,12 @@ Nic::Nic(ComponentId_t id, Params &params) :
     m_memoryModel(NULL),
     m_nic2host_base_lat_ns(0),
     m_respKey(1),
-	m_predNetIdleTime(0)
+	m_predNetIdleTime(0),
+    m_linkBytesPerSec(0),
+	m_detailedInterface(NULL),
+    m_getHdrVN(0),
+    m_getRespLargeVN(0),
+    m_getRespSmallVN(0)
 {
     m_myNodeId = params.find<int>("nid", -1);
     assert( m_myNodeId != -1 );
@@ -49,37 +54,56 @@ Nic::Nic(ComponentId_t id, Params &params) :
     char buffer[100];
     snprintf(buffer,100,"@t:%d:Nic::@p():@l ",m_myNodeId);
 
-    m_dbg.init(buffer, 
+    m_dbg.init(buffer,
         params.find<uint32_t>("verboseLevel",0),
-        params.find<uint32_t>("verboseMask",-1), 
+        params.find<uint32_t>("verboseMask",-1),
         Output::STDOUT);
 
     bool printConfig = ( 0 == params.find<std::string>( "printConfig", "no" ).compare("yes" ) );
 
 	// The link between the NIC and HOST historically provided the latency of crossing a bus such as PCI
 	// hence it was configured at wire up with a value like 150ns. The NIC has since taken on some HOST functionality
-	// so the latency has been dropped to 1ns. The bus latency must still be added for some messages so the 
-	// NIC now sends these message to itself with a time of nic2host_lat_ns - "the latency of the link". 
+	// so the latency has been dropped to 1ns. The bus latency must still be added for some messages so the
+	// NIC now sends these message to itself with a time of nic2host_lat_ns - "the latency of the link".
 	m_nic2host_lat_ns = calcDelay_ns( params.find<SST::UnitAlgebra>("nic2host_lat", SST::UnitAlgebra("150ns")));
-	if ( m_nic2host_lat_ns > m_nic2host_base_lat_ns ) { 
+	if ( m_nic2host_lat_ns > m_nic2host_base_lat_ns ) {
 		m_nic2host_base_lat_ns = 1;
 	}
+
+    m_numVN = params.find<int>("numVNs",1);
+    m_getHdrVN = params.find<int>("getHdrVN",0);
+    m_getRespLargeVN = params.find<int>("getRespLargeVN", 0 );
+    m_getRespSmallVN = params.find<int>("getRespSmallVN", 0 );
+    m_getRespSize = params.find<size_t>("getRespSize", 0 );
+
+    m_shmemAckVN = params.find<int>( "shmemAckVN", 0 );
+
+    m_shmemGetReqVN = params.find<int>( "shmemGetReqVN", 0 );
+    m_shmemGetLargeVN = params.find<int>( "shmemGetLargeVN", 0 );
+    m_shmemGetSmallVN = params.find<int>( "shmemGetSmallVN", 0 );
+    m_shmemGetThresholdLength = params.find<size_t>( "shmemGetThresholdLength", 0 );
+
+    m_shmemPutLargeVN = params.find<int>( "shmemPutLargeVN", 0 );
+    m_shmemPutSmallVN = params.find<int>( "shmemPutSmallVN", 0 );
+    m_shmemPutThresholdLength = params.find<size_t>( "shmemPutThresholdLength", 0 );
+
+    m_sendPQ.resize( m_numVN );
 
     int rxMatchDelay = params.find<int>( "rxMatchDelay_ns", 100 );
     m_txDelay =      params.find<int>( "txDelay_ns", 50 );
     int hostReadDelay = params.find<int>( "hostReadDelay_ns", 200 );
-    m_shmemRxDelay_ns = params.find<int>( "shmemRxDelay_ns",0); 
+    m_shmemRxDelay_ns = params.find<int>( "shmemRxDelay_ns",0);
+
 
     m_num_vNics = params.find<int>("num_vNics", 1 );
 
 	for ( unsigned i = 0; i < m_num_vNics; i++  ) {
-		m_sendStreamNum.push_back(0); 
+		m_sendStreamNum.push_back(0);
 	}
 
 
     m_tracedNode =     params.find<int>( "tracedNode", -1 );
     m_tracedPkt  =     params.find<int>( "tracedPkt", -1 );
-    int numShmemCmdSlots =    params.find<int>( "numShmemCmdSlots", 32 );
     int maxSendMachineQsize = params.find<int>( "maxSendMachineQsize", 1 );
     int maxRecvMachineQsize = params.find<int>( "maxRecvMachineQsize", 1 );
     Nic::ShmemSendMove::m_alignment = params.find<int>("shmemSendAlignment",64);
@@ -94,13 +118,13 @@ Nic::Nic(ComponentId_t id, Params &params) :
     int numSendMachines = params.find<int>( "numSendMachines",1);
     if ( numSendMachines < 1 ) {
         m_dbg.fatal(CALL_INFO,-1,"Error: numSendMachines must be greater than 1, requested %d\n",numSendMachines);
-    }    
+    }
     ++numSendMachines;
 
     int numRecvNicUnits = params.find<int>( "numRecvNicUnits", 1 );
-    m_unitPool = new UnitPool( 
+    m_unitPool = new UnitPool(
         m_dbg,
-        params.find<std::string>( "nicAllocationPolicy", "RoundRobin" ), 
+        params.find<std::string>( "nicAllocationPolicy", "RoundRobin" ),
         numRecvNicUnits,
         numSendMachines,
         1,
@@ -111,9 +135,9 @@ Nic::Nic(ComponentId_t id, Params &params) :
     UnitAlgebra xxx = params.find<SST::UnitAlgebra>( "packetSize" );
     int packetSizeInBytes;
     if ( xxx.hasUnits( "B" ) ) {
-        packetSizeInBytes = xxx.getRoundedValue(); 
+        packetSizeInBytes = xxx.getRoundedValue();
     } else if ( xxx.hasUnits( "b" ) ) {
-        packetSizeInBytes = xxx.getRoundedValue() / 8; 
+        packetSizeInBytes = xxx.getRoundedValue() / 8;
     } else {
         assert(0);
     }
@@ -121,34 +145,19 @@ Nic::Nic(ComponentId_t id, Params &params) :
     int minPktPayload = 32;
     assert( ( packetSizeInBytes - packetOverhead ) >= minPktPayload );
 
-	UnitAlgebra input_buf_size = params.find<SST::UnitAlgebra>("input_buf_size" );
-	UnitAlgebra output_buf_size = params.find<SST::UnitAlgebra>("output_buf_size" );
-	UnitAlgebra link_bw = params.find<SST::UnitAlgebra>("link_bw" );
-
-	m_linkBytesPerSec = link_bw.getRoundedValue()/8;
-
-    m_dbg.verbose(CALL_INFO,1,1,"id=%d input_buf_size=%s output_buf_size=%s link_bw=%s "
-			"packetSize=%d\n", m_myNodeId, 
-            input_buf_size.toString().c_str(),
-            output_buf_size.toString().c_str(),
-			link_bw.toString().c_str(), packetSizeInBytes);
-
-    m_linkControl = (SimpleNetwork*)loadSubComponent(
-                    params.find<std::string>("module"), this, params);
+    // Set up the linkcontrol
+    m_linkControl = loadUserSubComponent<Interfaces::SimpleNetwork>( "rtrLink", ComponentInfo::SHARE_NONE, m_numVN );
     assert( m_linkControl );
-
-	m_linkControl->initialize(params.find<std::string>("rtrPortName","rtr"),
-                              link_bw, 2, input_buf_size, output_buf_size);
 
     m_recvNotifyFunctor =
         new SimpleNetwork::Handler<Nic>(this,&Nic::recvNotify );
     assert( m_recvNotifyFunctor );
 
-    m_linkRecvWidget = new LinkControlWidget( m_dbg, 
+    m_linkRecvWidget = new LinkControlWidget( m_dbg,
         [=]() {
             m_dbg.debug(CALL_INFO,2,1,"call setNotifyOnReceive\n");
             m_linkControl->setNotifyOnReceive( m_recvNotifyFunctor );
-        } 
+        }, m_numVN
     );
 
     m_sendNotifyFunctor =
@@ -159,7 +168,7 @@ Nic::Nic(ComponentId_t id, Params &params) :
         [=]() {
             m_dbg.debug(CALL_INFO,2,1,"call setNotifyOnSend\n");
             m_linkControl->setNotifyOnSend( m_sendNotifyFunctor );
-        }
+        }, m_numVN
     );
 
     m_selfLink = configureSelfLink("Nic::selfLink", "1 ns",
@@ -173,8 +182,8 @@ Nic::Nic(ComponentId_t id, Params &params) :
 			params.find<std::string>("corePortName","core") ) );
     }
 
-	Params shmemParams = params.find_prefix_params( "shmem." ); 
-    m_shmem = new Shmem( *this, shmemParams, m_myNodeId, m_num_vNics, m_dbg, numShmemCmdSlots, getDelay_ns(), getDelay_ns() );
+	Params shmemParams = params.find_prefix_params( "shmem." );
+    m_shmem = new Shmem( *this, shmemParams, m_myNodeId, m_num_vNics, m_dbg, getDelay_ns(), getDelay_ns() );
 	size_t FAM_memSizeBytes = params.find<SST::UnitAlgebra>("FAM_memSize" ).getRoundedValue();
 	if ( FAM_memSizeBytes ) {
 		if ( printConfig ) {
@@ -211,15 +220,16 @@ Nic::Nic(ComponentId_t id, Params &params) :
         		smmParams.insert( "useBusBridge",  "no", true );
 			}
 		}
-        
+
 		if ( isdigit( useDetailed[0] ) ) {
 			if ( findNid( m_myNodeId, useDetailed ) ) {
+ 				m_detailedInterface = loadUserSubComponent<DetailedInterface>( "detailedInterface", ComponentInfo::SHARE_STATS );
         		smmParams.insert( "useDetailedModel",  "yes", true );
 			} else {
         		smmParams.insert( "useDetailedModel",  "no", true );
 			}
 		}
-        
+
         std::stringstream tmp;
 		tmp << m_myNodeId;
 		smmParams.insert( "id", tmp.str(), true );
@@ -233,38 +243,50 @@ Nic::Nic(ComponentId_t id, Params &params) :
 		tmp << m_unitPool->getTotal();
 		smmParams.insert( "numNicUnits", tmp.str(), true );
 
-        m_memoryModel = dynamic_cast<MemoryModel*>(loadSubComponent( "firefly.SimpleMemory",this, smmParams ));
+        m_memoryModel = loadAnonymousSubComponent<MemoryModel>( "firefly.SimpleMemory","", 0,
+                       ComponentInfo::SHARE_STATS|ComponentInfo::INSERT_STATS, smmParams );
+
+		if ( m_detailedInterface ) {
+			static_cast<SimpleMemoryModel*>(m_memoryModel)->setDetailedInterface( m_detailedInterface );
+		}
     }
     if ( params.find<int>( "useTrivialMemoryModel", 0 ) ) {
 		if ( m_memoryModel ) {
 			m_dbg.fatal(CALL_INFO,0,"can't used TrivialMemoryModel, memoryModel already configured\n" );
 		}
         Params smmParams = params.find_prefix_params( "simpleMemoryModel." );
-    	m_memoryModel = new TrivialMemoryModel( this, smmParams );
+    	// m_memoryModel = new TrivialMemoryModel( this, smmParams );
+    	m_memoryModel = loadAnonymousSubComponent<MemoryModel>(
+            "firefly.TrivialMemory","", 0,
+            ComponentInfo::SHARE_PORTS | ComponentInfo::SHARE_STATS | ComponentInfo::INSERT_STATS, smmParams );
     }
-    
-    m_recvMachine = new RecvMachine( *this, 0, m_vNicV.size(), m_myNodeId, 
+
+    for ( int i = 0; i < m_numVN; i++ ) {
+        m_recvMachine.push_back( new RecvMachine( *this, i, m_vNicV.size(), m_myNodeId,
                 params.find<uint32_t>("verboseLevel",0),
-                params.find<uint32_t>("verboseMask",-1), 
-                rxMatchDelay, hostReadDelay, maxRecvMachineQsize, 
-                params.find<>( "maxActiveRecvStreams", 1024*1024) );
+                params.find<uint32_t>("verboseMask",-1),
+                rxMatchDelay, hostReadDelay, maxRecvMachineQsize,
+                params.find<>( "maxActiveRecvStreams", 1024*1024) ) );
+    }
+
+    m_recvCtxData.resize( m_num_vNics );
 
     m_sendMachineV.resize(numSendMachines);
     for ( int i = 0; i < numSendMachines - 1; i++ ) {
-        SendMachine* sm = new SendMachine( *this,  m_myNodeId, 
+        SendMachine* sm = new SendMachine( *this,  m_myNodeId,
                 params.find<uint32_t>("verboseLevel",0),
-                params.find<uint32_t>("verboseMask",-1), 
+                params.find<uint32_t>("verboseMask",-1),
                 i, packetSizeInBytes, packetOverhead, maxSendMachineQsize, allocNicSendUnit(), false );
-        m_sendMachineQ.push( sm  ); 
+        m_sendMachineQ.push( sm  );
         m_sendMachineV[i] = sm;
     }
-    
-    m_sendMachineV[ numSendMachines - 1] = new SendMachine( *this,  m_myNodeId, 
-                params.find<uint32_t>("verboseLevel",0),
-                params.find<uint32_t>("verboseMask",-1), 
-                m_sendMachineV.size()-1, packetSizeInBytes, packetOverhead, maxSendMachineQsize, allocNicSendUnit(), true ); 
 
-    float dmaBW  = params.find<float>( "dmaBW_GBs", 0.0 ); 
+    m_sendMachineV[ numSendMachines - 1] = new SendMachine( *this,  m_myNodeId,
+                params.find<uint32_t>("verboseLevel",0),
+                params.find<uint32_t>("verboseMask",-1),
+                m_sendMachineV.size()-1, packetSizeInBytes, packetOverhead, maxSendMachineQsize, allocNicSendUnit(), true );
+
+    float dmaBW  = params.find<float>( "dmaBW_GBs", 0.0 );
     float dmaContentionMult = params.find<float>( "dmaContentionMult", 0.0 );
     m_arbitrateDMA = new ArbitrateDMA( *this, m_dbg, dmaBW,
                                     dmaContentionMult, 100000 );
@@ -272,28 +294,19 @@ Nic::Nic(ComponentId_t id, Params &params) :
     Params dtldParams = params.find_prefix_params( "detailedCompute." );
     std::string dtldName =  dtldParams.find<std::string>( "name" );
 
-    if ( ! dtldName.empty() ) {
+    if ( ! params.find<int>( "useSimpleMemoryModel", 0 ) && ! dtldName.empty() ) {
 
-        dtldParams.insert( "portName", "read", true );
         Thornhill::DetailedCompute* detailed;
-        detailed = dynamic_cast<Thornhill::DetailedCompute*>( loadSubComponent(
-                            dtldName, this, dtldParams ) );
 
-        assert( detailed );
-        if ( ! detailed->isConnected() ) {
-            delete detailed;
-        } else {
+        detailed = loadUserSubComponent<Thornhill::DetailedCompute>( "nicDetailedRead" );
+        if ( detailed && detailed->isConnected() ) {
+            m_dbg.verbose( CALL_INFO, 1, 0,"detailed read connected\n");
             m_detailedCompute[0] = detailed;
         }
 
-        dtldParams.insert( "portName", "write", true );
-        detailed = dynamic_cast<Thornhill::DetailedCompute*>( loadSubComponent(
-                            dtldName, this, dtldParams ) );
-
-        assert( detailed );
-        if ( ! detailed->isConnected() ) {
-            delete detailed;
-        } else {
+        detailed = loadUserSubComponent<Thornhill::DetailedCompute>( "nicDetailedWrite" );
+        if ( detailed && detailed->isConnected() ) {
+            m_dbg.verbose( CALL_INFO, 1, 0,"detailed write connected\n" );
             m_detailedCompute[1] = detailed;
         }
 
@@ -318,15 +331,12 @@ Nic::Nic(ComponentId_t id, Params &params) :
 
 Nic::~Nic()
 {
-    if ( m_memoryModel ) {
-        delete m_memoryModel;
-    }  
 	delete m_shmem;
-	delete m_linkControl;
 	delete m_unitPool;
  	delete m_linkSendWidget;
 	delete m_linkRecvWidget;
 
+#if 0
     int numRcvd = m_recvMachine->getNumReceived();
     int numSent=0;
 	delete m_recvMachine;
@@ -335,6 +345,7 @@ Nic::~Nic()
 		delete m_sendMachineV[i];
 	}
     m_dbg.debug(CALL_INFO,1,1,"                                                             finish numSent=%d numRcvd=%d\n",numSent,numRcvd);
+#endif
 
 	if ( m_recvNotifyFunctor ) delete m_recvNotifyFunctor;
 	if ( m_sendNotifyFunctor ) delete m_sendNotifyFunctor;
@@ -355,12 +366,18 @@ void Nic::init( unsigned int phase )
         for ( unsigned int i = 0; i < m_vNicV.size(); i++ ) {
             m_dbg.debug(CALL_INFO,1,1,"sendInitdata to core %d\n", i );
             m_vNicV[i]->init( phase );
-        } 
-    } 
+        }
+    }
     m_linkControl->init(phase);
 	if ( m_memoryModel ) {
 		m_memoryModel->init(phase);
 	}
+	if ( m_detailedInterface) {
+		m_detailedInterface->init(phase);
+	}
+    if ( m_linkBytesPerSec == 0 && m_linkControl->isNetworkInitialized() ) {
+        m_linkBytesPerSec = m_linkControl->getLinkBW().getRoundedValue()/8;
+    }
 }
 
 void Nic::handleVnicEvent( Event* ev, int id )
@@ -381,7 +398,7 @@ void Nic::handleVnicEvent( Event* ev, int id )
 		assert(0);
 	}
 }
-    
+
 void Nic::handleMsgEvent( NicCmdEvent* event, int id )
 {
     switch ( event->type ) {
@@ -411,7 +428,7 @@ void Nic::handleMsgEvent( NicCmdEvent* event, int id )
 void Nic::handleSelfEvent( Event *e )
 {
     SelfEvent* event = static_cast<SelfEvent*>(e);
-    
+
 	switch ( event->type ) {
 	case SelfEvent::Callback:
         event->callback();
@@ -460,8 +477,8 @@ void Nic::pioSend( NicCmdEvent *e, int vNicNum )
     CmdSendEntry* entry = new CmdSendEntry( vNicNum, getSendStreamNum(vNicNum), e, callback );
 
     m_dbg.debug(CALL_INFO,1,1,"src_vNic=%d dest=%#x dst_vNic=%d tag=%#x "
-        "vecLen=%lu totalBytes=%lu\n", vNicNum, e->node, e->dst_vNic,
-                    e->tag, e->iovec.size(), entry->totalBytes() );
+        "vecLen=%lu totalBytes=%lu vn=%d\n", vNicNum, e->node, e->dst_vNic,
+                    e->tag, e->iovec.size(), entry->totalBytes(), e->vn );
 
     qSendEntry( entry );
 }
@@ -469,14 +486,13 @@ void Nic::pioSend( NicCmdEvent *e, int vNicNum )
 void Nic::dmaRecv( NicCmdEvent *e, int vNicNum )
 {
     DmaRecvEntry::Callback callback = std::bind( &Nic::notifyRecvDmaDone, this, vNicNum, _1, _2, _3, _4, _5 );
-    
+
     DmaRecvEntry* entry = new DmaRecvEntry( e, callback );
 
     m_dbg.debug(CALL_INFO,1,1,"vNicNum=%d src=%d tag=%#x length=%lu\n",
                    vNicNum, e->node, e->tag, entry->totalBytes());
 
-    	
-    m_recvMachine->postRecv( vNicNum, entry );
+    m_recvMachine[0]->postRecv( vNicNum, entry );
 }
 
 void Nic::get( NicCmdEvent *e, int vNicNum )
@@ -486,12 +502,12 @@ void Nic::get( NicCmdEvent *e, int vNicNum )
     DmaRecvEntry::Callback callback = std::bind( &Nic::notifyRecvDmaDone, this, vNicNum, _1, _2, _3, _4, _5 );
 
     DmaRecvEntry* entry = new DmaRecvEntry( e, callback );
-    m_recvMachine->regGetOrigin( vNicNum, getKey, entry);
+    m_recvMachine[0]->regGetOrigin( vNicNum, getKey, entry);
 
     m_dbg.debug(CALL_INFO,1,1,"src_vNic=%d dest=%#x dst_vNic=%d tag=%#x vecLen=%lu totalBytes=%lu\n",
                 vNicNum, e->node, e->dst_vNic, e->tag, e->iovec.size(), entry->totalBytes() );
 
-    qSendEntry( new GetOrgnEntry( vNicNum, getSendStreamNum(vNicNum), e->node, e->dst_vNic, e->tag, getKey) );
+    qSendEntry( new GetOrgnEntry( vNicNum, getSendStreamNum(vNicNum), e->node, e->dst_vNic, e->tag, getKey, m_getHdrVN ) );
 }
 
 void Nic::put( NicCmdEvent *e, int vNicNum )
@@ -511,8 +527,8 @@ void Nic::put( NicCmdEvent *e, int vNicNum )
 void Nic::regMemRgn( NicCmdEvent *e, int vNicNum )
 {
     m_dbg.debug(CALL_INFO,1,1,"rgnNum %d\n",e->tag);
-    
-    m_recvMachine->regMemRgn( vNicNum, e->tag, new MemRgnEntry( e->iovec ) );
+
+    m_recvMachine[0]->regMemRgn( vNicNum, e->tag, new MemRgnEntry( e->iovec ) );
 
     delete e;
 }
@@ -537,10 +553,10 @@ void Nic::qSendEntry( SendEntryBase* entry ) {
         if ( ! m_sendMachineQ.empty() ) {
             assert( m_sendEntryQ.empty() );
             m_sendMachineQ.front()->run( entry );
-            m_sendMachineQ.pop();         
+            m_sendMachineQ.pop();
         } else {
             m_sendEntryQ.push(std::make_pair( getCurrentSimTimeNano(), entry ) );
-        }        
+        }
     }
 }
 
@@ -557,18 +573,17 @@ void Nic::notifySendDone( SendMachine* mach, SendEntryBase* entry  ) {
     }
 }
 
-void Nic::feedTheNetwork( )
+void Nic::feedTheNetwork( int vn )
 {
     m_dbg.debug(CALL_INFO,5,NIC_DBG_SEND_NETWORK,"\n");
 
-    int vc = 0;
+    auto& pq = m_sendPQ[vn];
+	while ( ! pq.empty() ) {
 
-	while ( ! m_sendPQ.empty() ) {
-
-		PriorityX* entry = m_sendPQ.top();
+		PriorityX* entry = pq.top();
 		X& x = *entry->data();
-					
-		bool ret = m_linkControl->spaceToSend( vc, x.pkt->calcPayloadSizeInBits() );
+
+		bool ret = m_linkControl->spaceToSend( vn, x.pkt->calcPayloadSizeInBits() );
 		if ( ! ret ) {
 
 			m_dbg.debug(CALL_INFO,1,NIC_DBG_SEND_NETWORK,"blocking on network\n" );
@@ -581,15 +596,15 @@ void Nic::feedTheNetwork( )
 								curTime -  m_predNetIdleTime);
 							m_networkStall->addData( curTime - m_predNetIdleTime );
 						}
-						feedTheNetwork();
-					}, vc);
+						feedTheNetwork( vn );
+					}, vn);
 				} ,0 );
 
 			return;
 		} else {
 
 			SimTime_t curTime = Simulation::getSimulation()->getCurrentSimCycle();
-			SimTime_t latPS = ( (double) x.pkt->payloadSize() / (double) m_linkBytesPerSec ) * 1000000000000; 
+			SimTime_t latPS = ( (double) x.pkt->payloadSize() / (double) m_linkBytesPerSec ) * 1000000000000;
 
 			if ( curTime > m_predNetIdleTime ) {
 				m_predNetIdleTime = curTime;
@@ -599,18 +614,18 @@ void Nic::feedTheNetwork( )
 			m_dbg.debug(CALL_INFO,1,NIC_DBG_SEND_NETWORK,"predNetIdleTime=%lld\n",m_predNetIdleTime );
 			m_dbg.debug(CALL_INFO,1,NIC_DBG_SEND_NETWORK,"p1=%" PRIu64 " p2=%d\n", entry->p1(), entry->p2() );
 
-			sendPkt( x.pkt, x.dest, vc );
+			sendPkt( x.pkt, x.dest, vn );
 
 			x.callback();
 
 			delete &x;
 			delete entry;
-			m_sendPQ.pop();
+			pq.pop();
 		}
 	}
 }
 
-void Nic::sendPkt( FireflyNetworkEvent* ev, int dest, int vc )
+void Nic::sendPkt( FireflyNetworkEvent* ev, int dest, int vn )
 {
     assert( ev->bufSize() );
 
@@ -621,7 +636,7 @@ void Nic::sendPkt( FireflyNetworkEvent* ev, int dest, int vc )
     req->dest = IdToNet( dest );
     req->src = IdToNet( m_myNodeId );
     req->size_in_bits = ev->calcPayloadSizeInBits();
-    req->vn = 0;
+    req->vn = vn;
     req->givePayload( ev );
 
     if ( (m_tracedPkt == m_packetId || m_tracedPkt == -2) && m_tracedNode == getNodeId() )
@@ -633,13 +648,13 @@ void Nic::sendPkt( FireflyNetworkEvent* ev, int dest, int vc )
     m_dbg.debug(CALL_INFO,3,NIC_DBG_SEND_NETWORK,
                     "node=%" PRIu64 " stream=%d bytes=%zu packetId=%" PRIu64 " %s %s\n",req->dest,
 													ev->getSrcStream(),
-                                                    ev->bufSize(), (uint64_t)m_packetId, 
-                                                    ev->isHdr() ? "Hdr":"", 
+                                                    ev->bufSize(), (uint64_t)m_packetId,
+                                                    ev->isHdr() ? "Hdr":"",
                                                     ev->isTail() ? "Tail":"" );
 
 	m_sentByteCount->addData( ev->payloadSize() );
 
-    bool sent = m_linkControl->send( req, vc );
+    bool sent = m_linkControl->send( req, vn );
     assert( sent );
 }
 
@@ -740,7 +755,7 @@ void Nic::dmaWrite( int unit, int pid, std::vector<MemOp>* vec, Callback callbac
 
     if ( m_memoryModel ) {
        	calcNicMemDelay( unit, pid, vec, callback );
-    } else { 
+    } else {
 		for ( unsigned i = 0;  i <  vec->size(); i++ ) {
 			assert( (*vec)[i].callback == NULL );
 		}

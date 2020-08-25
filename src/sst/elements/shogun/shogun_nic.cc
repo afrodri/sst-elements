@@ -1,3 +1,17 @@
+// Copyright 2009-2020 NTESS. Under the terms
+// of Contract DE-NA0003525 with NTESS, the U.S.
+// Government retains certain rights in this software.
+//
+// Copyright (c) 2009-2020, NTESS
+// All rights reserved.
+//
+// Portions are copyright of other developers:
+// See the file CONTRIBUTORS.TXT in the top level directory
+// the distribution for more information.
+//
+// This file is part of the SST software package. For license
+// information, see the LICENSE file in the top level directory of the
+// distribution.
 
 #include <sst_config.h>
 #include <sst/core/output.h>
@@ -11,10 +25,9 @@
 
 using namespace SST::Shogun;
 
-ShogunNIC::ShogunNIC(SST::Component* component, Params& params)
-    : SimpleNetwork(component)
-    , netID(-1)
-{
+ShogunNIC::ShogunNIC(SST::ComponentId_t id, Params& params, int vns = 1)
+    : SimpleNetwork(id)
+    , netID(-1), bw(UnitAlgebra("1GB/s")) {
 
     const int verbosity = params.find<uint32_t>("verbose", 0);
 
@@ -25,25 +38,20 @@ ShogunNIC::ShogunNIC(SST::Component* component, Params& params)
 
     onSendFunctor = nullptr;
     onRecvFunctor = nullptr;
-}
 
-ShogunNIC::~ShogunNIC()
-{
-    delete output;
-}
-
-bool ShogunNIC::initialize(const std::string& portName, const UnitAlgebra& link_bw,
-    int vns, const UnitAlgebra& in_buf_size,
-    const UnitAlgebra& out_buf_size)
-{
+    std::string portName = params.find<std::string>("port_name", "port");
 
     output->verbose(CALL_INFO, 4, 0, "Configuring port %s...\n", portName.c_str());
 
     link = configureLink(portName, "1ps", new Event::Handler<ShogunNIC>(this, &ShogunNIC::recvLinkEvent));
 
-    output->verbose(CALL_INFO, 4, 0, "-> result: %s\n", (nullptr == link) ? "null, not-configured" : "configure successful");
+    if (!link)
+        output->fatal(CALL_INFO, -1, "%s, Error: attempt to configure link on port '%s' was unsuccessful.\n", getName().c_str(), portName.c_str());
+}
 
-    return (nullptr != link);
+ShogunNIC::~ShogunNIC()
+{
+    delete output;
 }
 
 void ShogunNIC::sendInitData(SimpleNetwork::Request* req)
@@ -61,7 +69,7 @@ void ShogunNIC::sendInitData(SimpleNetwork::Request* req)
 
 SimpleNetwork::Request* ShogunNIC::recvInitData()
 {
-    output->verbose(CALL_INFO, 8, 0, "Recv init-data on net: %5" PRIi32 " init-events have %5" PRIi32 " events.\n", netID, initReqs.size());
+    output->verbose(CALL_INFO, 8, 0, "Recv init-data on net: %5" PRId64 " init-events have %5zu events.\n", netID, initReqs.size());
 
     if (!initReqs.empty()) {
         SimpleNetwork::Request* req = initReqs.front();
@@ -92,7 +100,7 @@ bool ShogunNIC::send(SimpleNetwork::Request* req, int vn)
             }
 
             remote_input_slots--;
-            output->verbose(CALL_INFO, 8, 0, "-> sent, remote slots now %5" PRIi32 ", dest=%5" PRIi32 "\n", remote_input_slots, req->dest);
+            output->verbose(CALL_INFO, 8, 0, "-> sent, remote slots now %5" PRId32 ", dest=%5" PRId64 "\n", remote_input_slots, req->dest);
 
             return true;
         } else {
@@ -102,6 +110,7 @@ bool ShogunNIC::send(SimpleNetwork::Request* req, int vn)
     } else {
         output->fatal(CALL_INFO, -1, "Error: send operation was called but the network is not configured yet (netID still equals -1)\n");
     }
+    return false; // eliminate compile warning
 }
 
 SimpleNetwork::Request* ShogunNIC::recv(int vn)
@@ -114,7 +123,7 @@ SimpleNetwork::Request* ShogunNIC::recv(int vn)
             SimpleNetwork::Request* req = reqQ->pop();
 
             if (nullptr != req) {
-                output->verbose(CALL_INFO, 8, 0, "-> request src: %" PRIi32 "\n", req->src);
+                output->verbose(CALL_INFO, 8, 0, "-> request src: %" PRId64 "\n", req->src);
             }
 
             link->send(new ShogunCreditEvent(netID));
@@ -213,8 +222,7 @@ SimpleNetwork::nid_t ShogunNIC::getEndpointID() const
 
 const UnitAlgebra& ShogunNIC::getLinkBW() const
 {
-    UnitAlgebra ag("1GB/s");
-    return ag;
+    return bw;
 }
 
 void ShogunNIC::recvLinkEvent(SST::Event* ev)
@@ -281,7 +289,7 @@ void ShogunNIC::reconfigureNIC(ShogunInitEvent* initEv)
         delete output;
         char outPrefix[256];
 
-        sprintf(outPrefix, "[t=@t][NIC%5" PRIi32 "][%25s][%5" PRIi32 "]: ", netID, getName().c_str(), netID);
+        sprintf(outPrefix, "[t=@t][NIC%5" PRId64 "][%25s][%5" PRId64 "]: ", netID, getName().c_str(), netID);
         output = new SST::Output(outPrefix, currentVerbosity, 0, SST::Output::STDOUT);
     }
 }

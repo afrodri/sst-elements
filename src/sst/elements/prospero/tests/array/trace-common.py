@@ -18,7 +18,7 @@ def main():
     try:
         opts, args = getopt.getopt(sys.argv[1:], "", ["TraceType=","UseDramSim="])
     except getopt.GetopError as err:
-        print str(err)
+        print(str(err))
         sys.exit(2)
     for o, a in opts:
         # print "args are ", o, "and", a
@@ -35,14 +35,14 @@ def main():
                 Tracetype = "CompressedBinary"
                 traceFile = "sstprospero-0-0-gz.trace"
             else:
-                print "no match a= ", a
-                print  "Found nothing for o", o
+                print("no match a= ", a)
+                print("Found nothing for o", o)
         elif o in ("--UseDramSim"):
             if a == "yes":
                 useDramSim = 'yes'
                 memSize = "512"
         else:
-            print "no match for o", o
+            print("no match for o", o)
             assert False, "Unknown Options !"
 
 main()
@@ -69,23 +69,28 @@ comp_l1cache.addParams({
       "L1" : "1",
       "cache_size" : "64 KB"
 })
-comp_memory = sst.Component("memory", "memHierarchy.MemController")
-comp_memory.addParams({
+comp_memctrl = sst.Component("memory", "memHierarchy.MemController")
+comp_memctrl.addParams({
       "coherence_protocol" : "MESI",
-      "access_time" : "1000 ns",
-      "backend.mem_size" : str(memSize) + "MiB",
       "clock" : "1GHz"
 })
 if useDramSim == "yes":
-    comp_memory.addParams({
-          "backend.system_ini" : "system.ini",
-          "backend.device_ini" : "DDR3_micron_32M_8B_x4_sg125.ini",
-          "backend" : "memHierarchy.dramsim"
+    memory = comp_memctrl.setSubComponent("backend", "memHierarchy.dramsim")
+    memory.addParams({
+        "system_ini" : "system.ini",
+        "device_ini" : "DDR3_micron_32M_8B_x4_sg125.ini",
+        "mem_size" : str(memSize) + "MiB",
     })
-
+else:
+    memory = comp_memctrl.setSubComponent("backend", "memHierarchy.simpleMem")
+    memory.addParams({
+        "access_time" : "1000 ns",
+        "mem_size" : str(memSize) + "MiB",
+    })
+    
 # Define the simulation links
 link_cpu_cache_link = sst.Link("link_cpu_cache_link")
 link_cpu_cache_link.connect( (comp_cpu, "cache_link", "1000ps"), (comp_l1cache, "high_network_0", "1000ps") )
 link_mem_bus_link = sst.Link("link_mem_bus_link")
-link_mem_bus_link.connect( (comp_l1cache, "low_network_0", "50ps"), (comp_memory, "direct_link", "50ps") )
+link_mem_bus_link.connect( (comp_l1cache, "low_network_0", "50ps"), (comp_memctrl, "direct_link", "50ps") )
 # End of generated output.
