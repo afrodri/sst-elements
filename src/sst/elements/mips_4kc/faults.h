@@ -98,12 +98,18 @@ namespace MIPS4KCComponent {
         bool checkForNewStyleFault(location_idx_t, uint32_t &faultedBits);
         unsigned int getRand1_31(); // generate # from 1 to 31
 
+        // bits To Flip: If using the _old_ style (command line param)
+        // mechanism for specificing faults, this specifies which bits
+        // will be flipped.
+        uint32_t bitsToFlip;
+        
         // output
         Output *out;
     public:
         faultChecker_t() {rng=0;}
         void init(faultTrack::location_t loc, uint64_t period, 
-                  string fault_file, uint32_t seed, Output *Out);
+                  string fault_file, uint32_t bitsToFlip,
+                  uint32_t seed, Output *Out);
 
         // convenience functions
         faultDesc getFault(faultTrack::location_t, uint32_t &flippedBits);

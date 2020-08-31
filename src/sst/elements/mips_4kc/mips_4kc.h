@@ -118,6 +118,7 @@ public:
             {"clock",                   "(string) Clock frequency. Note: the processor has a 'clock' on both the rising and falling edge, so this should actually be double the 'true' clock speed.", "1GHz"},
             {"fault_locations", "Where should faults be injected (mask)", "0"},
             {"fault_period", "(uint64) Over what period (cycles or instructions) should faults be injected", "100"},
+            {"fault_bits","Bitmask of which bits to flip when injecting fault. If set to 0, the bits will be selected randomly. NOTE: only use if NOT using fault_file.","0"},
             {"fault_file", "(string:pathname) Path to file containing faults to inject", "(null)"},
             {"fault_rng_seed", "RNG seed for fault injection (0 for system clock)", "0"},
             {"timeout", "Timeout. Period (in cycles) after which the processor will automatically cease processing and print timeout message", "-1"},

@@ -69,8 +69,10 @@ const std::map<std::string, faultChecker_t::location_idx_t> faultChecker_t::pars
     {"WB_ADDR",WB_ADDR_FAULT_IDX}
 };
 
-void faultChecker_t::init(faultTrack::location_t loc, uint64_t period, string fault_file,
-                          uint32_t seed, Output *Out) {
+void faultChecker_t::init(faultTrack::location_t loc, uint64_t period,
+                          string fault_file, uint32_t _bitsToFlip,
+                          uint32_t seed, Output *Out)  {
+    bitsToFlip = _bitsToFlip;
     out = Out;
 
     //init RNG
@@ -83,6 +85,7 @@ void faultChecker_t::init(faultTrack::location_t loc, uint64_t period, string fa
     // "Old Style" (non-file) fault injection
     faultTrack::location_t locations = loc;
     printf("Fault Injector: Inject faults at 0x%x\n", locations);
+    printf("Fault Injector: Bitmask 0x%x\n", bitsToFlip);
 
 
     for (int i = NO_LOC_FAULT_IDX; i < LAST_FAULT_IDX; ++i) {
@@ -270,9 +273,10 @@ bool faultChecker_t::checkForNewStyleFault(location_idx_t idx, uint32_t &faulted
 // should we inject?
 bool faultChecker_t::checkForFault(faultTrack::location_t loc, uint32_t &faultedBits) {
     location_idx_t newLoc = LAST_FAULT_IDX; 
-    faultedBits = 0; // default for old-style faults is 0 - let
-                     // calling function randomly determine which bit
-                     // to flip
+    // default for old-style faults is 0 - let calling function
+    // randomly determine which bit to flip. Otherwise, use the global
+    // bitmask.
+    faultedBits = bitsToFlip; 
 
     // advances event counts and check for "old style" faults 
     switch (loc) {
