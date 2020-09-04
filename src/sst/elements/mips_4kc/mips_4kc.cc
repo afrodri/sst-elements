@@ -82,9 +82,11 @@ MIPS4KC::MIPS4KC(ComponentId_t id, Params& params) :
     uint64_t fault_period = params.find<uint64_t>("fault_period", 100);
     uint64_t fault_bits = params.find<uint32_t>("fault_bits", 0);
     uint32_t fault_rng_seed = params.find<uint32_t>("fault_rng_seed", 0);
+    bool fault_by_time = params.find<bool>("fault_by_time", 0);
     string fault_file = params.find<string>("fault_file", "");
     faultChecker.init((faultTrack::location_t)fault_locations, fault_period,
-                      fault_file, fault_bits, fault_rng_seed, &out);
+                      fault_file, fault_bits, fault_by_time, fault_rng_seed,
+                      &out);
 
     // SPIM-CL config
     pipe_out =  stdout;

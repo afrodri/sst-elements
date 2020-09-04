@@ -70,8 +70,10 @@ const std::map<std::string, faultChecker_t::location_idx_t> faultChecker_t::pars
 };
 
 void faultChecker_t::init(faultTrack::location_t loc, uint64_t period,
-                          string fault_file, uint32_t _bitsToFlip,
+                          string fault_file, bool _fault_by_time,
+                          uint32_t _bitsToFlip,
                           uint32_t seed, Output *Out)  {
+    fault_by_time = _fault_by_time;
     bitsToFlip = _bitsToFlip;
     out = Out;
 
@@ -293,8 +295,14 @@ bool faultChecker_t::checkForFault(faultTrack::location_t loc, uint32_t &faulted
     case MDU_FAULT:
         newLoc = MDU_FAULT_IDX;
         event_count[MDU_FAULT_IDX]++;
-        if(event_count[MDU_FAULT_IDX] == faultTime[MDU_FAULT_IDX]) {
-            return true;
+        if (fault_by_time) {
+            if(reg_word::getNow() == faultTime[MDU_FAULT_IDX]) {
+                return true;
+            }
+        } else {
+            if(event_count[MDU_FAULT_IDX] == faultTime[MDU_FAULT_IDX]) {
+                return true;
+            }
         }
         break;
     case MEM_PRE_FAULT:
@@ -302,12 +310,20 @@ bool faultChecker_t::checkForFault(faultTrack::location_t loc, uint32_t &faulted
         // this assumes that MEM_PRE must be checked everytime since
         // we don't increment in MEM_POST
         event_count[MEM_PRE_FAULT_IDX]++;
-        if(event_count[MEM_PRE_FAULT_IDX] == faultTime[MEM_PRE_FAULT_IDX]) {return true;}
+        if (fault_by_time) {
+            if(reg_word::getNow() == faultTime[MEM_PRE_FAULT_IDX]) {return true;}
+        } else {
+            if(event_count[MEM_PRE_FAULT_IDX] == faultTime[MEM_PRE_FAULT_IDX]) {return true;}
+        }
         break;
     case MEM_POST_FAULT:
         newLoc = MEM_POST_FAULT_IDX;
         event_count[MEM_POST_FAULT_IDX]++;
-        if(event_count[MEM_PRE_FAULT_IDX] == faultTime[MEM_POST_FAULT_IDX]) {return true;}
+        if (fault_by_time) {
+            if(reg_word::getNow() == faultTime[MEM_POST_FAULT_IDX]) {return true;}
+        } else {
+            if(event_count[MEM_PRE_FAULT_IDX] == faultTime[MEM_POST_FAULT_IDX]) {return true;}
+        }
         break;
 
 #define STD_F_CASE(STR) \

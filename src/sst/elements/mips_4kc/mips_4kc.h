@@ -121,6 +121,7 @@ public:
             {"fault_bits","Bitmask of which bits to flip when injecting fault. If set to 0, the bits will be selected randomly. NOTE: only use if NOT using fault_file.","0"},
             {"fault_file", "(string:pathname) Path to file containing faults to inject", "(null)"},
             {"fault_rng_seed", "RNG seed for fault injection (0 for system clock)", "0"},
+            {"fault_by_time", "(bool) Inject (old style) faults by time, not event count", "0"},
             {"timeout", "Timeout. Period (in cycles) after which the processor will automatically cease processing and print timeout message", "-1"},
             {"stack_top","Starting top of stack","0x80000000"},
             {"proc_num","Processor Number, returned by syscall","0"}

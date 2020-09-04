@@ -102,13 +102,17 @@ namespace MIPS4KCComponent {
         // mechanism for specificing faults, this specifies which bits
         // will be flipped.
         uint32_t bitsToFlip;
+
+        // if true, all (old style) faults are injected at a the
+        // specified time, not the specified event count.
+        bool fault_by_time;
         
         // output
         Output *out;
     public:
         faultChecker_t() {rng=0;}
         void init(faultTrack::location_t loc, uint64_t period, 
-                  string fault_file, uint32_t bitsToFlip,
+                  string fault_file, bool _fault_by_time, uint32_t bitsToFlip,
                   uint32_t seed, Output *Out);
 
         // convenience functions
