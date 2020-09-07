@@ -73,9 +73,9 @@ namespace faultTrack {
         MDU_FAULT = 0x4, // Multiply-divide: at a random mult/div
                          // instruction, flip a bit(s) in the
                          // output of the Mult/Div unit
-        MEM_PRE_FAULT = 0x8, // Memory Stage "pre": at a random
+        MEM_PRE_ADDR_FAULT = 0x8, // Memory Stage "pre": at a random
                              // load/store, flip a  bit(s) in the
-                             // address or store value
+                             // address
         MEM_POST_FAULT = 0x10, // Memory Stage "post": at a random
                                // load/store, flip a  bit(s) in the
                                // output of the memory stage
@@ -90,7 +90,9 @@ namespace faultTrack {
                                      // instruction address
         INST_TYPE_FAULT = 0x400, // Flip random bit(s) in
                                      // instruction before decdoe
-        WB_ADDR_FAULT = 0x800 // writeback correct data to wrong register
+        WB_ADDR_FAULT = 0x800, // writeback correct data to wrong register
+        MEM_PRE_DATA_FAULT = 0x1000, // Memory Stage "pre": at a random
+                                     // load/store, flip a  bit(s) in the data
     } location_t; 
 }
 

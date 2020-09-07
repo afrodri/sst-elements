@@ -42,6 +42,20 @@ MDU Event 4 0xffffffff
 
  */
 
+/* To add new fault
+
+faults.h
+   ~44 
+   convenience func
+faults.cc
+   ~71 (parse map)
+   ~114(Genf time)
+   check_for_fault
+   printStats
+reg.h
+   ~74
+ */
+
 
 #include <sst_config.h>
 #include "faults.h"
@@ -58,7 +72,7 @@ const std::map<std::string, faultChecker_t::location_idx_t> faultChecker_t::pars
     {"RF", RF_FAULT_IDX},
     {"ID", ID_FAULT_IDX},
     {"MDU", MDU_FAULT_IDX},
-    {"MEM_PRE", MEM_PRE_FAULT_IDX},
+    {"MEM_PRE_ADDR", MEM_PRE_ADDR_FAULT_IDX},
     {"MEM_POST", MEM_POST_FAULT_IDX},
     {"WB", WB_FAULT_IDX},
     {"ALU", ALU_FAULT_IDX},
@@ -66,7 +80,8 @@ const std::map<std::string, faultChecker_t::location_idx_t> faultChecker_t::pars
     {"CONTROL",CONTROL_FAULT_IDX},
     {"INST_ADDR",INST_ADDR_FAULT_IDX},
     {"INST_TYPE",INST_TYPE_FAULT_IDX},
-    {"WB_ADDR",WB_ADDR_FAULT_IDX}
+    {"WB_ADDR",WB_ADDR_FAULT_IDX},
+    {"MEM_PRE_DATA", MEM_PRE_DATA_FAULT_IDX}
 };
 
 void faultChecker_t::init(faultTrack::location_t loc, uint64_t period,
@@ -106,7 +121,7 @@ void faultChecker_t::init(faultTrack::location_t loc, uint64_t period,
     GEN_F_TIME(RF_FAULT);
     GEN_F_TIME(ID_FAULT);
     GEN_F_TIME(MDU_FAULT);
-    GEN_F_TIME(MEM_PRE_FAULT);
+    GEN_F_TIME(MEM_PRE_ADDR_FAULT);
     GEN_F_TIME(MEM_POST_FAULT);
     GEN_F_TIME(WB_FAULT);
     GEN_F_TIME(ALU_FAULT);
@@ -115,6 +130,7 @@ void faultChecker_t::init(faultTrack::location_t loc, uint64_t period,
     GEN_F_TIME(INST_ADDR_FAULT);
     GEN_F_TIME(INST_TYPE_FAULT);
     GEN_F_TIME(WB_ADDR_FAULT);
+    GEN_F_TIME(MEM_PRE_DATA_FAULT);
 
 #undef GEN_F_TIME
 
@@ -305,15 +321,26 @@ bool faultChecker_t::checkForFault(faultTrack::location_t loc, uint32_t &faulted
             }
         }
         break;
-    case MEM_PRE_FAULT:
-        newLoc = MEM_PRE_FAULT_IDX;
+    case MEM_PRE_ADDR_FAULT:
+        newLoc = MEM_PRE_ADDR_FAULT_IDX;
         // this assumes that MEM_PRE must be checked everytime since
         // we don't increment in MEM_POST
-        event_count[MEM_PRE_FAULT_IDX]++;
+        event_count[MEM_PRE_ADDR_FAULT_IDX]++;
         if (fault_by_time) {
-            if(reg_word::getNow() == faultTime[MEM_PRE_FAULT_IDX]) {return true;}
+            if(reg_word::getNow() == faultTime[MEM_PRE_ADDR_FAULT_IDX]) {return true;}
         } else {
-            if(event_count[MEM_PRE_FAULT_IDX] == faultTime[MEM_PRE_FAULT_IDX]) {return true;}
+            if(event_count[MEM_PRE_ADDR_FAULT_IDX] == faultTime[MEM_PRE_ADDR_FAULT_IDX]) {return true;}
+        }
+        break;
+    case MEM_PRE_DATA_FAULT:
+        newLoc = MEM_PRE_DATA_FAULT_IDX;
+        // this assumes that MEM_PRE must be checked everytime since
+        // we don't increment in MEM_POST
+        event_count[MEM_PRE_DATA_FAULT_IDX]++;
+        if (fault_by_time) {
+            if(reg_word::getNow() == faultTime[MEM_PRE_DATA_FAULT_IDX]) {return true;}
+        } else {
+            if(event_count[MEM_PRE_DATA_FAULT_IDX] == faultTime[MEM_PRE_DATA_FAULT_IDX]) {return true;}
         }
         break;
     case MEM_POST_FAULT:
@@ -322,7 +349,7 @@ bool faultChecker_t::checkForFault(faultTrack::location_t loc, uint32_t &faulted
         if (fault_by_time) {
             if(reg_word::getNow() == faultTime[MEM_POST_FAULT_IDX]) {return true;}
         } else {
-            if(event_count[MEM_PRE_FAULT_IDX] == faultTime[MEM_POST_FAULT_IDX]) {return true;}
+            if(event_count[MEM_PRE_ADDR_FAULT_IDX] == faultTime[MEM_POST_FAULT_IDX]) {return true;}
         }
         break;
 
@@ -342,22 +369,7 @@ bool faultChecker_t::checkForFault(faultTrack::location_t loc, uint32_t &faulted
         STD_F_CASE(WB_ADDR_FAULT); 
 
 #undef STD_F_CASE
-        
-        /*case WB_FAULT:
-        newLoc = WB_FAULT_IDX;
-        event_count[WB_FAULT_IDX]++;
-        if (reg_word::getNow() == faultTime[WB_FAULT_IDX]) {return true;}
-        break;
-    case ALU_FAULT:
-        newLoc = ALU_FAULT_IDX;
-        event_count[ALU_FAULT_IDX]++;
-        if (reg_word::getNow() == faultTime[ALU_FAULT_IDX]) {return true;}
-        break;
-    case MEM_BP_FAULT:
-        newLoc = MEM_BP_FAULT_IDX;
-        event_count[MEM_BP_FAULT_IDX]++;
-        if (reg_word::getNow() == faultTime[MEM_BP_IDX]) {return true;}
-        break;*/
+
     default:
         printf("Unknown fault location\n");
     }
@@ -422,25 +434,33 @@ void faultChecker_t::checkAndInject_MDU(reg_word &hi, reg_word &lo) {
 void faultChecker_t::checkAndInject_MEM_PRE(reg_word &addr, 
                                             reg_word &value, bool isLoad) {
     uint32_t flippedBits = 0;
-    if (checkForFault(MEM_PRE_FAULT, flippedBits)) {
-        uint32_t roll = rng->generateNextUInt32(); // should replace
-        bool faultAddr = roll & 0x1;
-        roll >>= 1;
+    bool faultAddr = checkForFault(MEM_PRE_ADDR_FAULT, flippedBits);
 
-        faultDesc theFault = getFault(MEM_PRE_FAULT, flippedBits);
+    if (faultAddr) {
+        faultDesc theFault = getFault(MEM_PRE_ADDR_FAULT, flippedBits);
 
-        printf("INJECTING MEM_PRE FAULT %s:%08x %s @ %lld\n", 
-               (faultAddr) ? "Address" : "Data", theFault.bits,
+        printf("INJECTING MEM_PRE_ADDR FAULT %08x %s @ %lld\n", 
+               theFault.bits,
                (isLoad) ? "(isLoad)" : "(isStore)",
                reg_word::getNow());
-        if (isLoad && !faultAddr) {
+
+        addr.addFault(theFault);
+    }
+
+    flippedBits = 0;
+    bool faultData = checkForFault(MEM_PRE_DATA_FAULT, flippedBits);
+
+    if (faultData) {
+        faultDesc theFault = getFault(MEM_PRE_DATA_FAULT, flippedBits);
+
+        printf("INJECTING MEM_PRE_DATA FAULT %08x %s @ %lld\n", 
+               theFault.bits,
+               (isLoad) ? "(isLoad)" : "(isStore)",
+               reg_word::getNow());
+        if (isLoad) {
             printf(" INJECTING fault to data on load: no effect\n");
         }
-        if (faultAddr) {
-            addr.addFault(theFault);
-        } else {
-            value.addFault(theFault);
-        }
+        value.addFault(theFault);
     }
 }
 
@@ -549,7 +569,7 @@ void faultChecker_t::printStats() {
     PF(RF_FAULT);
     PF(ID_FAULT);
     PF(MDU_FAULT);
-    PF(MEM_PRE_FAULT);
+    PF(MEM_PRE_ADDR_FAULT);
     PF(MEM_POST_FAULT);
     PF(WB_FAULT);
     PF(ALU_FAULT);
@@ -558,6 +578,7 @@ void faultChecker_t::printStats() {
     PF(INST_ADDR_FAULT);
     PF(INST_TYPE_FAULT);
     PF(WB_ADDR_FAULT);
+    PF(MEM_PRE_DATA_FAULT);
 
 #undef PF
 

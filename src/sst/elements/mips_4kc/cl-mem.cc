@@ -79,7 +79,7 @@ void MIPS4KC::CL_READ_MEM(reg_word &LOC, const reg_word &ADDR,
         data <<= 8;
         data |= req->data[i];
     }
-    if (LOC.getData() != data) {
+    if ((outputLevel > 0) && (LOC.getData() != data)) {
         // seems to be caused by unaligned memory. not sure if error
         static int c = 0;
         c++;

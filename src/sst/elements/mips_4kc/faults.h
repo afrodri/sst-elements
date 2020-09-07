@@ -39,7 +39,7 @@ namespace MIPS4KCComponent {
             RF_FAULT_IDX,
             ID_FAULT_IDX,
             MDU_FAULT_IDX,
-            MEM_PRE_FAULT_IDX,
+            MEM_PRE_ADDR_FAULT_IDX,
             MEM_POST_FAULT_IDX,
             WB_FAULT_IDX,
             ALU_FAULT_IDX,
@@ -48,6 +48,7 @@ namespace MIPS4KCComponent {
             INST_ADDR_FAULT_IDX,
             INST_TYPE_FAULT_IDX,
             WB_ADDR_FAULT_IDX,
+            MEM_PRE_DATA_FAULT_IDX,
             LAST_FAULT_IDX
         } location_idx_t; 
         static const std::map<std::string, location_idx_t> parseMap;
@@ -119,6 +120,7 @@ namespace MIPS4KCComponent {
         faultDesc getFault(faultTrack::location_t, uint32_t &flippedBits);
         void checkAndInject_RF(reg_word R[32]);
         void checkAndInject_MDU(reg_word &hi, reg_word &lo);
+        // checks both data and addr faults
         void checkAndInject_MEM_PRE(reg_word &addr, reg_word &value, bool isLoad);
         void checkAndInject_MEM_POST(reg_word &data);
         void checkAndInject_WB(reg_word &data);

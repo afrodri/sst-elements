@@ -51,12 +51,12 @@ print("Using faultPeriod of %s" % faultPeriod)
 comp_mips = sst.Component("MIPS4KC", "mips_4kc.MIPS4KC")
 comp_mips.addParams({
     "verbose" : 0,
-        "execFile" : options.execFile,
-        "clock" : "1GHz",
-        "fault_locations" : options.faultLoc,
-        "fault_period" : faultPeriod,
-        "fault_by_time" : 1,
-        "fault_bits" : options.faultBits,    
+    "execFile" : options.execFile,
+    "clock" : "1GHz",
+    "fault_locations" : options.faultLoc,
+    "fault_period" : faultPeriod,
+    "fault_by_time" : 1,
+    "fault_bits" : options.faultBits,    
     "timeout" : 1000000
 })
 
