@@ -404,7 +404,8 @@ void faultChecker_t::checkAndInject_RF(reg_word R[32]) {
     uint32_t flippedBits = 0;
     if(checkForFault(faultTrack::RF_FAULT, flippedBits)) {
         unsigned int reg = getRand1_31();
-        printf("INJECTING RF FAULT reg %d @ %lld\n", reg, reg_word::getNow());
+        printf("INJECTING RF FAULT reg %d (bits %x) @ %lld\n", reg,
+               flippedBits, reg_word::getNow());
         R[reg].addFault(getFault(RF_FAULT, flippedBits));
     }
 }
