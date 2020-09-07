@@ -70,17 +70,21 @@ sub getFault() {
     return ($f, $b);
 }
 
+#"main"
 $i = 0;
 $e = $ARGV[0];
 $file = $ARGV[1];
 srand();
 initProb();
-while ($i < 400) {
+while ($i < 100) {
     my ($f, $b) = getFault();
     $str = "sst ../test_by_time.py -- -e $e -f $f -b $b";
-#    `echo "---------------------$f-$b-$e" >>& ${file}`;
-    printf("$str\n");
-    #    `$str >>& ${file}`;
+    if (0) { # test
+        printf("$str\n");
+    } else {
+        system("echo \"---------------------$f-$b-$e\" 1>>${file} 2>&1");
+        system("${str} 1>>${file} 2>&1");
+    }
     $i++;
 }
 
