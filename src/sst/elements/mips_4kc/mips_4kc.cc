@@ -179,7 +179,7 @@ bool MIPS4KC::clockTic( Cycle_t c)
     if (outputLevel > 0) {
         printf("CYCLE %llu: %llu.%u\n", c, pipeCycle, isFalling);
     } else {
-        if ((pipeCycle & 0xfff) == 1 && isFalling) {
+        if ((pipeCycle & 0x1fff) == 1 && isFalling) {
             printf("CYCLE %llu: %llu.%u\n", c, pipeCycle, isFalling);
         }
     }

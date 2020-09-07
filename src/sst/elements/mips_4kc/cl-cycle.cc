@@ -79,7 +79,7 @@ void MIPS4KC::process_rising_MEM (PIPE_STAGE ps) {
     instruction *inst = ps->inst;
 
     if (outputLevel > 0) {
-        printf("rising_MEM issuing ");
+        printf("rising_MEM issuing addr: 0x%x ", ADDR(ps).getData());
         print_inst(ps->pc.getData()); 
     }
     

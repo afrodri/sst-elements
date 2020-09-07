@@ -156,7 +156,9 @@ void MIPS4KC::initialize_run_stack (int argc, char **argv)
   R[REG_A0] = argc;
   R[29] = R[29] & ~7;		/* Round down to nearest double-word */
   R[29] = copy_int_to_stack (argc); /* Leave pointing to argc */
-  printf("stack starting at %x\n", R[29].getData());
+  if (outputLevel > 0) {
+      printf("stack starting at %x\n", R[29].getData());
+  }
 }
 
 

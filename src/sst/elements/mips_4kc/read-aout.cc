@@ -107,33 +107,43 @@ int MIPS4KC::read_aout_file (const char *file_name)
         if ((name = elf_strptr(e, shstrndx , shdr.sh_name)) == NULL)
             out.fatal(CALL_INFO,-1 , "elf_strptr() failed:␣%s.", 
                       elf_errmsg(-1));
-        
-        printf("Section %4lu %s Size=%lu Flags= %s%s%s Addr=%lx\n", 
-               elf_ndxscn(scn), name, shdr.sh_size,
-               (shdr.sh_flags & SHF_WRITE) ? "Write " : "",
-               (shdr.sh_flags & SHF_ALLOC) ? "Alloc " : "",
-               (shdr.sh_flags & SHF_EXECINSTR) ? "Exec " : "",
-               shdr.sh_addr);
+
+        if (outputLevel > 0) {
+            printf("Section %4lu %s Size=%lu Flags= %s%s%s Addr=%lx\n", 
+                   elf_ndxscn(scn), name, shdr.sh_size,
+                   (shdr.sh_flags & SHF_WRITE) ? "Write " : "",
+                   (shdr.sh_flags & SHF_ALLOC) ? "Alloc " : "",
+                   (shdr.sh_flags & SHF_EXECINSTR) ? "Exec " : "",
+                   shdr.sh_addr);
+        }
 
                     
         // if .text section, set the program_starting_address
         // NOTE: this assumes built with -nostartfiles
         if (strncmp(name,".text",5) == 0) {
-            printf("Detected INIT section %lx\n", shdr.sh_addr);
+            if (outputLevel > 0) {
+                printf("Detected INIT section %lx\n", shdr.sh_addr);
+            }
             program_starting_address = shdr.sh_addr;
         }
 
         // if reginfo section, get the $gp
         if (strncmp(name,".reginfo",8) == 0) {
-            printf(" Detected .reginfo section %lx\n", shdr.sh_addr);
+            if (outputLevel > 0) {
+                printf(" Detected .reginfo section %lx\n", shdr.sh_addr);
+            }
             Elf_Data *data = NULL;
             while((data = elf_getdata(scn, data)) != NULL) {
-                printf(" .reginfo Data: align %lu, off %llu, size %lu\n", 
-                       data->d_align, data->d_off, data->d_size);
+                if (outputLevel > 0) {
+                    printf(" .reginfo Data: align %lu, off %llu, size %lu\n", 
+                           data->d_align, data->d_off, data->d_size);
+                }
                 assert(data->d_size == 24);
                 uint32_t* wp = (uint32_t*)(data->d_buf) + 5;
                 R[REG_GP] = *wp; // set $gp
-                printf(" Setting $gp to 0x%x\n", R[REG_GP].getData());
+                if (outputLevel > 0) {
+                    printf(" Setting $gp to 0x%x\n", R[REG_GP].getData());
+                }
             }
         }
         
@@ -143,8 +153,10 @@ int MIPS4KC::read_aout_file (const char *file_name)
             Elf_Data *data = NULL;
             while((data = elf_getdata(scn, data)) != NULL) {
                 size_t n=0;
-                printf(" Text Data: align %lu, off %llu, size %lu\n", 
-                       data->d_align, data->d_off, data->d_size);
+                if (outputLevel > 0) {
+                    printf(" Text Data: align %lu, off %llu, size %lu\n", 
+                           data->d_align, data->d_off, data->d_size);
+                }
                 while (n < shdr.sh_size) {
                     //pointer to instruction
                     uint32_t* wp = (uint32_t*) data->d_buf + (n>>2);
@@ -154,7 +166,9 @@ int MIPS4KC::read_aout_file (const char *file_name)
                     addr += 4; // advance
                     n += 4;
                 }
-                printf(" Last text %x address\n", addr-4);
+                if (outputLevel > 0) {
+                    printf(" Last text %x address\n", addr-4);
+                }
                 last_text_addr = addr-4;
             }
         } else if (shdr.sh_flags & SHF_ALLOC) {
@@ -172,7 +186,9 @@ int MIPS4KC::read_aout_file (const char *file_name)
                     out.fatal(CALL_INFO,-1 , 
                               "start of data segment already set\n"); 
                 }
-                printf("setting start of data section to %x\n", addr);
+                if (outputLevel > 0) {
+                    printf("setting start of data section to %x\n", addr);
+                }
                 //R[REG_GP] = addr+32752; // set $gp
                 DATA_BOT = addr; // set bottom of the text 
                 data_top = DATA_BOT + initial_data_size;
@@ -185,8 +201,10 @@ int MIPS4KC::read_aout_file (const char *file_name)
             uint8_t zero = 0;
             while((data = elf_getdata(scn, data)) != NULL) {
                 size_t n=0;
-                printf(" Data Data: align %lu, off %llu, size %lu\n", 
-                       data->d_align, data->d_off, data->d_size);
+                if (outputLevel > 0) {
+                    printf(" Data Data: align %lu, off %llu, size %lu\n", 
+                           data->d_align, data->d_off, data->d_size);
+                }
                 while (n < shdr.sh_size) {
                     //pointer to data
                     uint8_t* wp;
