@@ -1,8 +1,8 @@
-// Copyright 2009-2019 NTESS. Under the terms
+// Copyright 2009-2020 NTESS. Under the terms
 // of Contract DE-NA0003525 with NTESS, the U.S.
 // Government retains certain rights in this software.
 //
-// Copyright (c) 2009-2019, NTESS
+// Copyright (c) 2009-2020, NTESS
 // All rights reserved.
 //
 // Portions are copyright of other developers:
@@ -20,12 +20,12 @@
 using namespace SST;
 using namespace SST::Firefly;
 
-static void print( Output& dbg, char* buf, int len )
+static void print( Output& dbg, const char* buf, int len )
 {
     std::string tmp;
     dbg.debug(CALL_INFO,4,NIC_DBG_RECV_MACHINE,"addr=%p len=%d\n",buf,len);
     for ( int i = 0; i < len; i++ ) {
-        dbg.debug(CALL_INFO,3,NIC_DBG_RECV_MACHINE, "%#03x\n",(unsigned char)buf[i]);
+        dbg.debug(CALL_INFO,4,NIC_DBG_RECV_MACHINE, "%#03x\n",(unsigned char)buf[i]);
     }
 }
 
@@ -43,6 +43,7 @@ bool Nic::EntryBase::copyIn( Output& dbg,
             size_t fromLen = event.bufSize();
             size_t len = toLen < fromLen ? toLen : fromLen;
 
+            dbg.debug(CALL_INFO,3,NIC_DBG_RECV_MACHINE,"simVAddr=0x%" PRIx64 "\n",ioVec()[currentVec()].addr.getSimVAddr() + currentPos() );
             vec.push_back( MemOp( ioVec()[currentVec()].addr.getSimVAddr() + currentPos(), len, MemOp::Op::BusDmaToHost ) );
 
             char* toPtr = (char*) ioVec()[currentVec()].addr.getBacking() +
@@ -95,7 +96,7 @@ void Nic::EntryBase::copyOut( Output& dbg, int numBytes,
                 event.bufSize() <  numBytes;
                 currentVec()++, currentPos() = 0 ) {
 
-        dbg.debug(CALL_INFO,3,1,"vec[%lu].len %lu\n",currentVec(),
+        dbg.debug(CALL_INFO,3,NIC_DBG_SEND_MACHINE,"vec[%lu].len %lu\n",currentVec(),
                     ioVec()[currentVec()].len );
 
         if ( ioVec()[currentVec()].len ) {
@@ -104,15 +105,18 @@ void Nic::EntryBase::copyOut( Output& dbg, int numBytes,
 
             size_t len = toLen < fromLen ? toLen : fromLen;
 
-            dbg.debug(CALL_INFO,3,1,"toBufSpace=%lu fromAvail=%lu, "
+            dbg.debug(CALL_INFO,3,NIC_DBG_SEND_MACHINE,"toBufSpace=%lu fromAvail=%lu, "
                             "memcpy len=%lu\n", toLen,fromLen,len);
 
             const char* from =
                     (const char*) ioVec()[currentVec()].addr.getBacking() + currentPos();
 
+            dbg.debug(CALL_INFO,3,NIC_DBG_SEND_MACHINE,"simVAddr=0x%" PRIx64 "\n",ioVec()[currentVec()].addr.getSimVAddr() + currentPos() );
+
             vec.push_back( MemOp( ioVec()[currentVec()].addr.getSimVAddr() + currentPos(), len, MemOp::Op::BusDmaFromHost ) );
 
             if ( ioVec()[currentVec()].addr.getBacking()) {
+                print( dbg, from, len );
                 event.bufAppend( from, len );
             } else {
                 event.bufAppend( NULL, len );
@@ -124,5 +128,5 @@ void Nic::EntryBase::copyOut( Output& dbg, int numBytes,
             }
         }
     }
-    dbg.debug(CALL_INFO,3,1,"currentVec()=%lu, currentPos()=%lu\n", currentVec(), currentPos());
+    dbg.debug(CALL_INFO,3,NIC_DBG_SEND_MACHINE,"currentVec()=%lu, currentPos()=%lu\n", currentVec(), currentPos());
 }

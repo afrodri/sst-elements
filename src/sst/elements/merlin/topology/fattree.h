@@ -1,12 +1,12 @@
 // -*- mode: c++ -*-
 
-// Copyright 2009-2019 NTESS. Under the terms
+// Copyright 2009-2020 NTESS. Under the terms
 // of Contract DE-NA0003525 with NTESS, the U.S.
 // Government retains certain rights in this software.
-// 
-// Copyright (c) 2009-2019, NTESS
+//
+// Copyright (c) 2009-2020, NTESS
 // All rights reserved.
-// 
+//
 // Portions are copyright of other developers:
 // See the file CONTRIBUTORS.TXT in the top level directory
 // the distribution for more information.
@@ -32,21 +32,25 @@ class topo_fattree: public Topology {
 
 public:
 
-    SST_ELI_REGISTER_SUBCOMPONENT(
+    SST_ELI_REGISTER_SUBCOMPONENT_DERIVED(
         topo_fattree,
         "merlin",
         "fattree",
         SST_ELI_ELEMENT_VERSION(1,0,0),
         "Fattree topology object",
-        "SST::Merlin::Topology")
-    
+        SST::Merlin::Topology)
+
     SST_ELI_DOCUMENT_PARAMS(
         {"fattree:shape",               "Shape of the fattree"},
         {"fattree:routing_alg",         "Routing algorithm to use. [deterministic | adaptive]","deterministic"},
-        {"fattree:adaptive_threshold",  "Threshold used to determine if a packet will adaptively route."}
+        {"fattree:adaptive_threshold",  "Threshold used to determine if a packet will adaptively route."},
+
+        {"shape",               "Shape of the fattree"},
+        {"routing_alg",         "Routing algorithm to use. [deterministic | adaptive]","deterministic"},
+        {"adaptive_threshold",  "Threshold used to determine if a packet will adaptively route."}
     )
 
-    
+
 private:
     int rtr_level;
     int level_id;
@@ -62,22 +66,29 @@ private:
     int up_ports;
     int down_ports;
     int num_ports;
+    int num_vns;
     int num_vcs;
-    
+
     int const* outputCredits;
     int* thresholds;
-    bool allow_adaptive;
     double adaptive_threshold;
-    
+
+    struct vn_info {
+        int start_vc;
+        int num_vcs;
+        bool allow_adaptive;
+    };
+
+    vn_info* vns;
+
     void parseShape(const std::string &shape, int *downs, int *ups) const;
 
-    
+
 public:
-    topo_fattree(Component* comp, Params& params);
+    topo_fattree(ComponentId_t cid, Params& params, int num_ports, int rtr_id, int num_vns);
     ~topo_fattree();
 
-    virtual void route(int port, int vc, internal_router_event* ev);
-    virtual void reroute(int port, int vc, internal_router_event* ev);
+    virtual void route_packet(int port, int vc, internal_router_event* ev);
     virtual internal_router_event* process_input(RtrEvent* ev);
 
     virtual void routeInitData(int port, internal_router_event* ev, std::vector<int> &outPorts);
@@ -89,9 +100,17 @@ public:
 
     virtual void setOutputBufferCreditArray(int const* array, int vcs);
 
-    virtual int computeNumVCs(int vns) {return vns;}
-    
+    virtual void getVCsPerVN(std::vector<int>& vcs_per_vn) {
+        for ( int i = 0; i < num_vns; ++i ) {
+            vcs_per_vn[i] = vns[i].num_vcs;
+        }
+    }
+
+private:
+    void route_deterministic(int port, int vc, internal_router_event* ev);
 };
+
+
 
 }
 }

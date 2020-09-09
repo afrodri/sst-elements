@@ -1,10 +1,10 @@
-// Copyright 2009-2019 NTESS. Under the terms
+// Copyright 2009-2020 NTESS. Under the terms
 // of Contract DE-NA0003525 with NTESS, the U.S.
 // Government retains certain rights in this software.
-// 
-// Copyright (c) 2009-2019, NTESS
+//
+// Copyright (c) 2009-2020, NTESS
 // All rights reserved.
-// 
+//
 // Portions are copyright of other developers:
 // See the file CONTRIBUTORS.TXT in the top level directory
 // the distribution for more information.
@@ -26,24 +26,23 @@
 #include <queue>
 
 #include "sst/elements/merlin/router.h"
-#include "sst/elements/merlin/portControl.h"
 
 namespace SST {
 namespace Merlin {
 
-    
+
 class xbar_arb_age : public XbarArbitration {
 
 public:
 
-    SST_ELI_REGISTER_SUBCOMPONENT(
+    SST_ELI_REGISTER_SUBCOMPONENT_DERIVED(
         xbar_arb_age,
         "merlin",
         "xbar_arb_age",
         SST_ELI_ELEMENT_VERSION(1,0,0),
         "Age based arbitration unit for hr_router",
-        "SST::Merlin::XbarArbitration")
-    
+        SST::Merlin::XbarArbitration)
+
 private:
     /**
        Structure for sorting priority based on age
@@ -70,7 +69,7 @@ private:
             injection_time(0),
             size_in_flits(0)
         {}
-        
+
         priority_entry_t(uint16_t port, uint16_t vc) :
             port(port),
             vc(vc),
@@ -80,7 +79,7 @@ private:
             size_in_flits(0)
         {}
     };
-    
+
     /** To use with STL priority queues, that order in reverse. */
     class time_priority {
     public:
@@ -112,19 +111,20 @@ private:
     age_queue_t age_queue;
 
     priority_entry_t* entries;
-    
+
     int num_ports;
     int num_vcs;
 
     int total_entries;
-    
+
     internal_router_event** vc_heads;
 
     // PortControl** ports;
-    
+
 public:
-    xbar_arb_age(Component* parent, Params& params) :
-        XbarArbitration(parent)
+
+    xbar_arb_age(ComponentId_t cid, Params& params) :
+        XbarArbitration(cid)
     {
     }
 
@@ -132,13 +132,13 @@ public:
         delete[] entries;
     }
 
-    void setPorts(int num_ports_s, int num_vcs_s) {
+     void setPorts(int num_ports_s, int num_vcs_s) {
         num_ports = num_ports_s;
         num_vcs = num_vcs_s;
 
         total_entries = num_ports * num_vcs;
         entries = new priority_entry_t[total_entries];
-        
+
         int index = 0;
         for ( int i = 0; i < num_ports; i++ ) {
             for ( int j = 0; j < num_vcs; j++ ) {
@@ -148,15 +148,15 @@ public:
 
         vc_heads = new internal_router_event*[num_vcs];
     }
-    
+
     // Naming convention is from point of view of the xbar.  So,
     // in_port_busy is >0 if someone is writing to that xbar port and
     // out_port_busy is >0 if that xbar port being read.
     void arbitrate(
 #if VERIFY_DECLOCKING
-                   PortControl** ports, int* in_port_busy, int* out_port_busy, int* progress_vc, bool clocking
+                   PortInterface** ports, int* in_port_busy, int* out_port_busy, int* progress_vc, bool clocking
 #else
-                   PortControl** ports, int* in_port_busy, int* out_port_busy, int* progress_vc
+                   PortInterface** ports, int* in_port_busy, int* out_port_busy, int* progress_vc
 #endif
                    )
     {
@@ -187,17 +187,17 @@ public:
                 }
                 index++;
             }
-            
+
         }
 
         while ( !age_queue.empty() ) {
 
             priority_entry_t* entry = age_queue.top();
             age_queue.pop();
-            
+
             int port = entry->port;
             int vc = entry->vc;
-	    
+
             // if the input to the xbar for this port is busy, nothing
             // to do.  This will only happen at this point if a higher
             // priority VC from this port was satisfied this cycle.
@@ -205,19 +205,19 @@ public:
                 // Have an event, see if it can be progressed
                 int next_port = entry->next_port;
                 int next_vc = entry->next_vc;
-            
+
                 // We can progress if the next port's output from xbar
                 // is not busy and there are enough credits.
                 if ( out_port_busy[next_port] <= 0 &&
                      ports[next_port]->spaceToSend(next_vc, entry->size_in_flits) ) {
-                                
+
                     // Tell the router what to move
                     progress_vc[port] = vc;
-                    
+
                     // Need to set the busy values
                     in_port_busy[port] = entry->size_in_flits;
                     out_port_busy[next_port] = entry->size_in_flits;
-                    
+
                 }
                 else {
                     progress_vc[port] = -2;
@@ -233,7 +233,7 @@ public:
 
         return;
     }
-    
+
     void reportSkippedCycles(Cycle_t cycles) {
     }
 
@@ -244,9 +244,9 @@ public:
         /*     stream << i << ": " << rr_vcs[i] << std::endl; */
         /* } */
     }
-    
+
 };
- 
+
 }
 }
 

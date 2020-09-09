@@ -1,8 +1,8 @@
-// Copyright 2009-2019 NTESS. Under the terms
+// Copyright 2009-2020 NTESS. Under the terms
 // of Contract DE-NA0003525 with NTESS, the U.S.
 // Government retains certain rights in this software.
 //
-// Copyright (c) 2009-2019, NTESS
+// Copyright (c) 2009-2020, NTESS
 // All rights reserved.
 //
 // Portions are copyright of other developers:
@@ -39,16 +39,17 @@
 #include "c_DeviceDriver.hpp"
 
 using namespace SST;
-using namespace SST::n_Bank;
+using namespace SST::CramSim;
 
-c_CmdScheduler::c_CmdScheduler(Component *comp, Params &x_params) : SubComponent(comp){
-    m_owner = dynamic_cast<c_Controller*>(comp);
-    m_deviceController=m_owner->getDeviceDriver();
-    output=dynamic_cast<c_Controller*>(comp)->getOutput();
-    //create command queue
-    m_numBanks=m_owner->getDeviceDriver()->getTotalNumBank();
-    m_numChannels=m_owner->getDeviceDriver()->getNumChannel();
-    m_numRanksPerChannel=m_owner->getDeviceDriver()->getNumRanksPerChannel();
+
+c_CmdScheduler::c_CmdScheduler(ComponentId_t id, Params &x_params, Output* out, c_DeviceDriver* driver) : SubComponent(id), output(out), m_deviceController(driver) {
+    build(x_params);
+}
+
+void c_CmdScheduler::build(Params &x_params) {
+    m_numBanks=m_deviceController->getTotalNumBank();
+    m_numChannels=m_deviceController->getNumChannel();
+    m_numRanksPerChannel=m_deviceController->getNumRanksPerChannel();
     m_numBanksPerChannel=m_numBanks/m_numChannels;
     m_numBanksPerRank = m_numBanks/m_numRanksPerChannel;
 
@@ -91,11 +92,11 @@ c_CmdScheduler::~c_CmdScheduler(){
 
 
 
-void c_CmdScheduler::run(){
+void c_CmdScheduler::run(SimTime_t simCycle){
 
     bool isSuccess = false;
     c_BankCommand *l_cmdPtr= nullptr;
-    SimTime_t  l_time=m_owner->getSimCycle();
+    SimTime_t  l_time=simCycle;
 
     for(unsigned l_ch=0;l_ch<m_numChannels;l_ch++) {
 
@@ -112,7 +113,7 @@ void c_CmdScheduler::run(){
                         l_cmdQueue.pop_front();
 
 #ifdef __SST_DEBUG_OUTPUT__
-                        l_cmdPtr->print(output, "[c_CmdScheduler]",m_owner->getSimCycle());
+                        l_cmdPtr->print(output, "[c_CmdScheduler]", simCycle);
 #endif
                     }
                 }

@@ -1,8 +1,8 @@
-// Copyright 2013-2018 NTESS. Under the terms
+// Copyright 2013-2020 NTESS. Under the terms
 // of Contract DE-NA0003525 with NTESS, the U.S.
 // Government retains certain rights in this software.
 //
-// Copyright (c) 2013-2018, NTESS
+// Copyright (c) 2013-2020, NTESS
 // All rights reserved.
 //
 // Portions are copyright of other developers:
@@ -41,6 +41,7 @@ class ProtocolAPI;
         NAME(Allreduce)   \
         NAME(Allgather)   \
         NAME(Gatherv)   \
+        NAME(Scatterv)   \
         NAME(Alltoallv)   \
         NAME(Send)   \
         NAME(Recv)   \
@@ -58,7 +59,7 @@ class ProtocolAPI;
 #define GENERATE_ENUM(ENUM) ENUM,
 #define GENERATE_STRING(STRING) #STRING,
 
-class FunctionSM  {
+class FunctionSM : public SubComponent {
 
     typedef FunctionSMInterface::Retval Retval;
 	typedef CtrlMsg::Functor_0<FunctionSM, bool> Functor;
@@ -66,6 +67,17 @@ class FunctionSM  {
     static const char *m_functionName[];
 
   public:
+
+    SST_ELI_REGISTER_SUBCOMPONENT_API(SST::Firefly::FunctionSM,ProtocolAPI*)
+
+    SST_ELI_REGISTER_SUBCOMPONENT_DERIVED(
+        FunctionSM,
+        "firefly",
+        "functionSM",
+        SST_ELI_ELEMENT_VERSION(1,0,0),
+        "",
+        SST::Firefly::FunctionSM
+    )
     typedef std::function<void()> Callback;
 
     enum FunctionEnum{
@@ -74,11 +86,12 @@ class FunctionSM  {
 
     const char *functionName( FunctionEnum x) {return m_functionName[x]; }
 
-    FunctionSM( SST::Params& params, SST::Component*, ProtocolAPI* );
+    FunctionSM( ComponentId_t, Params& params, ProtocolAPI* );
     ~FunctionSM();
+
     void printStatus( Output& );
 
-    Link* getRetLink() { return m_toMeLink; } 
+    Link* getRetLink() { return m_toMeLink; }
     void setup( Info* );
     void start(int type, MP::Functor* retFunc,  SST::Event* );
     void start(int type, Callback,  SST::Event* );
@@ -89,21 +102,20 @@ class FunctionSM  {
     void handleToDriver(SST::Event*);
     void handleEnterEvent( SST::Event* );
     void processRetval( Retval& );
-    
-    void initFunction( SST::Component*, Info*, FunctionEnum,
+
+    void initFunction( Info*, FunctionEnum,
                                     std::string, Params&, Params& );
 
-    std::vector<FunctionSMInterface*>  m_smV; 
-    FunctionSMInterface*    m_sm; 
+    std::vector<FunctionSMInterface*>  m_smV;
+    FunctionSMInterface*    m_sm;
     MP::Functor*    m_retFunc;
     Callback        m_callback;
 
-    SST::Link*          m_fromDriverLink;    
-    SST::Link*          m_toDriverLink;    
+    SST::Link*          m_fromDriverLink;
+    SST::Link*          m_toDriverLink;
     SST::Link*          m_toMeLink;
     Output              m_dbg;
     SST::Params         m_params;
-    SST::Component*     m_owner;
     ProtocolAPI*	m_proto;
 };
 

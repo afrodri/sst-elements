@@ -1,8 +1,8 @@
-// Copyright 2013-2018 NTESS. Under the terms
+// Copyright 2013-2020 NTESS. Under the terms
 // of Contract DE-NA0003525 with NTESS, the U.S.
 // Government retains certain rights in this software.
 //
-// Copyright (c) 2013-2018, NTESS
+// Copyright (c) 2013-2020, NTESS
 // All rights reserved.
 //
 // Portions are copyright of other developers:
@@ -25,16 +25,18 @@ class DetailedCompute : public SubComponent {
 
   public:
 
+    SST_ELI_REGISTER_SUBCOMPONENT_API(SST::Thornhill::DetailedCompute)
+
 	struct Generator {
 		std::string name;
 		SST::Params params;
 	};
 
-    DetailedCompute( SST::Component* owner ) : SubComponent( owner ) {}
+    DetailedCompute( ComponentId_t id ) : SubComponent( id ) {}
+    DetailedCompute( ComponentId_t id, Params& ) : SubComponent( id ) {}
 
     virtual ~DetailedCompute(){};
-    virtual void start( const std::deque< 
-								std::pair< std::string, SST::Params > >&,
+    virtual void start( std::deque< std::pair< std::string, SST::Params > >&,
                  std::function<int()> retFunc, std::function<int()> finiFunc) = 0;
     virtual bool isConnected() = 0;
 	virtual std::string getModelName() = 0;

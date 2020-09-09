@@ -16,27 +16,27 @@ def read_arguments():
             substrIndex = arg.find("=")+1
             trace_file = arg[substrIndex:]
             boolUseRandomTrace = False
-            print "Trace file:", trace_file
+            print("Trace file:", trace_file)
 
         elif arg.find("--configfile=") != -1:
             substrIndex = arg.find("=")+1
             config_file_list.append(arg[substrIndex:])
             boolUseDefaultConfig = False
-            print "Config file list:", config_file_list
+            print("Config file list:", config_file_list)
 
         elif arg != sys.argv[0]:
             if arg.find("=") == -1:
-                print "Malformed config override found!: ", arg
+                print("Malformed config override found!: ", arg)
                 exit(-1)
             override_list.append(arg)
-            print "Override: ", override_list[-1]
+            print("Override: ", override_list[-1])
             
     return [boolUseRandomTrace, trace_file, boolUseDefaultConfig, config_file_list, override_list]
 
 def setup_config_params():
     l_params = {}
     if g_boolUseDefaultConfig:
-        print "Config file not found... using default configuration"
+        print("Config file not found... using default configuration")
         l_params = {
             "clockCycle": "1ns",
             "stopAtCycle": "10us",
@@ -94,18 +94,18 @@ def setup_config_params():
             l_configFile = open(g_config_file, 'r')
             for l_line in l_configFile:
                 l_tokens = l_line.split()
-                #print l_tokens[0], ": ", l_tokens[1]
+                #print (l_tokens[0], ": ", l_tokens[1])
                 l_params[l_tokens[0]] = l_tokens[1]
 
     for override in g_override_list:
         l_tokens = override.split("=")
-        print "Override cfg", l_tokens[0], l_tokens[1]
+        print("Override cfg", l_tokens[0], l_tokens[1])
         l_params[l_tokens[0]] = l_tokens[1]
         
     if not g_boolUseRandomTrace:
         l_params["traceFile"] = g_trace_file
     else:
-        print "Trace file not found... using random address generator"
+        print("Trace file not found... using random address generator")
 
     return l_params
 
@@ -144,14 +144,16 @@ comp_txnGen0 = setup_txn_generator(g_params)
 # controller
 comp_controller0 = sst.Component("MemController0", "CramSim.c_Controller")
 comp_controller0.addParams(g_params)
-comp_controller0.addParams({
-		"TxnScheduler" : "CramSim.c_TxnScheduler",
-		"TxnConverter" : "CramSim.c_TxnConverter",
-		"AddrMapper" : "CramSim.c_AddressHasher",
-		"CmdScheduler" : "CramSim.c_CmdScheduler" ,
-		"DeviceDriver" : "CramSim.c_DeviceDriver"
-		})
-
+c0 = comp_controller0.setSubComponent("TxnScheduler", "CramSim.c_TxnScheduler")
+c1 = comp_controller0.setSubComponent("TxnConverter", "CramSim.c_TxnConverter")
+c2 = comp_controller0.setSubComponent("AddrMapper", "CramSim.c_AddressHasher")
+c3 = comp_controller0.setSubComponent("CmdScheduler", "CramSim.c_CmdScheduler")
+c4 = comp_controller0.setSubComponent("DeviceDriver", "CramSim.c_DeviceDriver")
+c0.addParams(g_params)
+c1.addParams(g_params)
+c2.addParams(g_params)
+c3.addParams(g_params)
+c4.addParams(g_params)
 
 
 # bank receiver

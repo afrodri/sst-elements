@@ -1,8 +1,8 @@
-// Copyright 2009-2019 NTESS. Under the terms
+// Copyright 2009-2020 NTESS. Under the terms
 // of Contract DE-NA0003525 with NTESS, the U.S.
 // Government retains certain rights in this software.
 //
-// Copyright (c) 2009-2019, NTESS
+// Copyright (c) 2009-2020, NTESS
 // All rights reserved.
 //
 // Portions are copyright of other developers:
@@ -37,7 +37,7 @@
 #include "c_Transaction.hpp"
 
 namespace SST {
-namespace n_Bank {
+namespace CramSim {
 class c_TxnReqEvent: public SST::Event {
 public:
 	c_Transaction *m_payload; // FIXME: change this pointer to a unique_ptr
@@ -51,7 +51,7 @@ public:
 		ser & m_payload;
 	}
 
-	ImplementSerializable (SST::n_Bank::c_TxnReqEvent);
+	ImplementSerializable (SST::CramSim::c_TxnReqEvent);
 
 };
 

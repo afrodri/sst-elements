@@ -1,8 +1,8 @@
-// Copyright 2009-2019 NTESS. Under the terms
+// Copyright 2009-2020 NTESS. Under the terms
 // of Contract DE-NA0003525 with NTESS, the U.S.
 // Government retains certain rights in this software.
 //
-// Copyright (c) 2009-2019, NTESS
+// Copyright (c) 2009-2020, NTESS
 // All rights reserved.
 //
 // Portions are copyright of other developers:
@@ -26,13 +26,13 @@ namespace Ember {
 class EmberCMT2DGenerator : public EmberMessagePassingGenerator {
 
 public:
-    SST_ELI_REGISTER_SUBCOMPONENT(
+    SST_ELI_REGISTER_SUBCOMPONENT_DERIVED(
         EmberCMT2DGenerator,
         "ember",
         "CMT2DMotif",
         SST_ELI_ELEMENT_VERSION(1,0,0),
         "Performs nearest neighbor exchange over a 2D mesh decomposition",
-        "SST::Ember::EmberGenerator"
+        SST::Ember::EmberGenerator
     )
 
     SST_ELI_DOCUMENT_PARAMS(
@@ -77,7 +77,7 @@ public:
 
 
 public:
-	EmberCMT2DGenerator(SST::Component* owner, Params& params);
+	EmberCMT2DGenerator(SST::ComponentId_t, Params& params);
 //	~EmberCMT2DGenerator();
 	void configure();
 	bool generate( std::queue<EmberEvent*>& evQ);
@@ -87,21 +87,21 @@ private:
 	uint32_t iterations;	// total no. of timesteps required
 	uint32_t eltSize;		// size of element or stencil in 3-dim (5-20)
     uint32_t variables;     // No. of physical quantities
-    
+
 // User parameters - machine
 	int32_t px;				// Machine size (no. of nodes in mesh)
-	int32_t py;			
-	uint32_t threads;			
+	int32_t py;
+	uint32_t threads;
 
 // User parameters - mpi rank
 	uint32_t mx;			// local distribution of the elements on a proc
-	uint32_t my;			
-	uint32_t mz;			
+	uint32_t my;
+	uint32_t mz;
 	uint32_t nelt;			// Total no. of elements per process (100-10,000)
 
 // User parameters - processor
 	uint64_t procFlops;		// no. of FLOPS/cycle for the processor
-	uint64_t procFreq;		// operating frequency of the processor							
+	uint64_t procFreq;		// operating frequency of the processor
 	double m_mean;
 	double m_stddev;
 

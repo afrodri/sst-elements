@@ -1,8 +1,8 @@
-// Copyright 2009-2019 NTESS. Under the terms
+// Copyright 2009-2020 NTESS. Under the terms
 // of Contract DE-NA0003525 with NTESS, the U.S.
 // Government retains certain rights in this software.
 //
-// Copyright (c) 2009-2019, NTESS
+// Copyright (c) 2009-2020, NTESS
 // All rights reserved.
 //
 // Portions are copyright of other developers:
@@ -32,13 +32,13 @@ namespace Ember {
 class EmberShmemFAM_PutGenerator : public EmberShmemGenerator {
 
 public:
-    SST_ELI_REGISTER_SUBCOMPONENT(
+    SST_ELI_REGISTER_SUBCOMPONENT_DERIVED(
         EmberShmemFAM_PutGenerator,
         "ember",
         "ShmemFAM_PutMotif",
         SST_ELI_ELEMENT_VERSION(1,0,0),
         "SHMEM FAM_Put",
-        "SST::Ember::EmberGenerator"
+        SST::Ember::EmberGenerator
 
     )
 
@@ -46,10 +46,10 @@ public:
     )
 
 public:
-	EmberShmemFAM_PutGenerator(SST::Component* owner, Params& params) :
-		EmberShmemGenerator(owner, params, "ShmemFAM_Put" ), m_phase(Init), m_groupName("MyApplication"),m_curBlock(0),m_rng(NULL)
-	{ 
-		m_totalBytes = (size_t) params.find<SST::UnitAlgebra>("arg.totalBytes").getRoundedValue(); 
+	EmberShmemFAM_PutGenerator(SST::ComponentId_t id, Params& params) :
+		EmberShmemGenerator(id, params, "ShmemFAM_Put" ), m_phase(Init), m_groupName("MyApplication"),m_curBlock(0),m_rng(NULL)
+	{
+		m_totalBytes = (size_t) params.find<SST::UnitAlgebra>("arg.totalBytes").getRoundedValue();
 		m_getLoop       = params.find<int>("arg.getLoop", 1);
 		m_maxDelay      = params.find<int>("arg.maxDelay",20);
 		m_blockSize	    = params.find<int>("arg.blockSize", 4096);
@@ -67,9 +67,6 @@ public:
 		m_numBlocks = m_totalBytes/m_blockSize;
 		m_numBlocksPerPartition = m_partitionSize/m_blockSize;
 
-        m_miscLib = static_cast<EmberMiscLib*>(getLib("HadesMisc"));
-        assert(m_miscLib);
-
 		if ( m_randCompute || m_randomGet ) {
 			m_rng = new SST::RNG::XORShiftRNG();
         	struct timeval start;
@@ -78,7 +75,7 @@ public:
 		}
 	}
 
-    bool generate( std::queue<EmberEvent*>& evQ) 
+    bool generate( std::queue<EmberEvent*>& evQ)
 	{
         switch ( m_phase ) {
         case Init:
@@ -107,12 +104,12 @@ public:
 				}
 				if ( ! m_detailedComputeList.empty() ) {
 					printf("detailedComputeList:     %s\n", m_detailedComputeList.c_str() );
-				}	
+				}
 			}
 
 			if ( m_detailedCompute ) {
 			    printf("node %d, pe %d using detailed compute\n", m_node_num, m_my_pe  );
-			}		
+			}
 
 			m_blockOffset = m_my_pe;
 			enQ_malloc( evQ, &m_mem, m_numBlocksPerPartition * m_blockSize, m_backed );
@@ -122,7 +119,7 @@ public:
             break;
 
         case Work:
-			
+
 			if ( ! work( evQ ) ) {
 				enQ_quiet( evQ );
 				m_phase = Wait;
@@ -156,7 +153,7 @@ public:
 
 			uint32_t block;
 			if ( m_randomGet ) {
-				block = m_rng->generateNextUInt32(); 
+				block = m_rng->generateNextUInt32();
 			} else {
 				block = (m_curBlock + m_blockOffset);
 			}
@@ -264,7 +261,6 @@ public:
 	uint64_t m_regionSize;
 	std::string m_groupName;
 	Shmem::Fam_Descriptor m_fd;
-	EmberMiscLib* m_miscLib;
 
 	int m_stream_n;
 	bool m_backed;

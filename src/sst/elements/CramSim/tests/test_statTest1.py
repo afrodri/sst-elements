@@ -7,30 +7,30 @@ import time
 
 #######################################################################################################
 def read_arguments():
-	config_file = list()
-        override_list = list()
-        boolDefaultConfig = True;
+    config_file = list()
+    override_list = list()
+    boolDefaultConfig = True;
 
-	for arg in sys.argv:
-            if arg.find("--configfile=") != -1:
-		substrIndex = arg.find("=")+1
-		config_file = arg[substrIndex:]
-		print "Config file:", config_file
-		boolDefaultConfig = False;
+    for arg in sys.argv:
+        if arg.find("--configfile=") != -1:
+            substrIndex = arg.find("=")+1
+            config_file = arg[substrIndex:]
+            print("Config file:", config_file)
+            boolDefaultConfig = False;
 
-  	    elif arg != sys.argv[0]:
-                if arg.find("=") == -1:
-                    print "Malformed config override found!: ", arg
-                    exit(-1)
-                override_list.append(arg)
-                print "Override: ", override_list[-1]
+        elif arg != sys.argv[0]:
+            if arg.find("=") == -1:
+                print("Malformed config override found!: ", arg)
+                exit(-1)
+            override_list.append(arg)
+            print("Override: ", override_list[-1])
 
-	
-	if boolDefaultConfig == True:
-		config_file = "../ddr4_verimem.cfg"
-		print "config file is not specified.. using ddr4_verimem.cfg"
 
-	return [config_file, override_list]
+    if boolDefaultConfig == True:
+        config_file = "../ddr4_verimem.cfg"
+        print("config file is not specified.. using ddr4_verimem.cfg")
+
+    return [config_file, override_list]
 
 
 
@@ -39,12 +39,12 @@ def setup_config_params(config_file, override_list):
     l_configFile = open(config_file, 'r')
     for l_line in l_configFile:
         l_tokens = l_line.split()
-         #print l_tokens[0], ": ", l_tokens[1]
+         #print (l_tokens[0], ": ", l_tokens[1])
         l_params[l_tokens[0]] = l_tokens[1]
 
     for override in override_list:
         l_tokens = override.split("=")
-        print "Override cfg", l_tokens[0], l_tokens[1]
+        print("Override cfg", l_tokens[0], l_tokens[1])
         l_params[l_tokens[0]] = l_tokens[1]
      
     return l_params
@@ -74,9 +74,9 @@ comp_txnGen0 = sst.Component("TxnGen", "CramSim.c_TxnGen")
 comp_txnGen0.addParams(g_params)
 comp_txnGen0.addParams({
         "mode" : "rand",
-	"numTxnPerCycle" : 1,
-	"readWriteRatio" : 0.5
-	})
+        "numTxnPerCycle" : 1,
+        "readWriteRatio" : 0.5
+    })
 comp_txnGen0.enableAllStatistics()
 
 
@@ -85,14 +85,16 @@ comp_txnGen0.enableAllStatistics()
 # controller
 comp_controller0 = sst.Component("MemController0", "CramSim.c_Controller")
 comp_controller0.addParams(g_params)
-comp_controller0.addParams({
-		"TxnScheduler" : "CramSim.c_TxnScheduler",
-		"TxnConverter" : "CramSim.c_TxnConverter",
-		"AddrMapper" : "CramSim.c_AddressHasher",
-		"CmdScheduler" : "CramSim.c_CmdScheduler" ,
-		"DeviceDriver" : "CramSim.c_DeviceDriver"
-		})
-
+c0 = comp_controller0.setSubComponent("TxnScheduler", "CramSim.c_TxnScheduler")
+c1 = comp_controller0.setSubComponent("TxnConverter", "CramSim.c_TxnConverter")
+c2 = comp_controller0.setSubComponent("AddrMapper", "CramSim.c_AddressHasher")
+c3 = comp_controller0.setSubComponent("CmdScheduler", "CramSim.c_CmdScheduler")
+c4 = comp_controller0.setSubComponent("DeviceDriver", "CramSim.c_DeviceDriver")
+c0.addParams(g_params)
+c1.addParams(g_params)
+c2.addParams(g_params)
+c3.addParams(g_params)
+c4.addParams(g_params)
 
 
 # bank receiver

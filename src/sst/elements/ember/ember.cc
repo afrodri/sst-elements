@@ -1,8 +1,8 @@
-// Copyright 2009-2019 NTESS. Under the terms
+// Copyright 2009-2020 NTESS. Under the terms
 // of Contract DE-NA0003525 with NTESS, the U.S.
 // Government retains certain rights in this software.
 //
-// Copyright (c) 2009-2019, NTESS
+// Copyright (c) 2009-2020, NTESS
 // All rights reserved.
 //
 // Portions are copyright of other developers:
@@ -49,3 +49,33 @@
 #include "shmem/motifs/emberShmemFAM_Gatherv.h"
 #include "shmem/motifs/emberShmemFAM_AtomicInc.h"
 #include "shmem/motifs/emberShmemFAM_Cswap.h"
+
+
+/*
+  Install the python library
+ */
+#include <sst/core/model/element_python.h>
+
+namespace SST {
+namespace Ember {
+
+char pyember[] = {
+#include "pyember.inc"
+    0x00};
+
+class EmberPyModule : public SSTElementPythonModule {
+public:
+    EmberPyModule(std::string library) :
+        SSTElementPythonModule(library)
+    {
+        auto primary_module = createPrimaryModule(pyember,"pyember.py");
+    }
+
+    SST_ELI_REGISTER_PYTHON_MODULE(
+        SST::Ember::EmberPyModule,
+        "ember",
+        SST_ELI_ELEMENT_VERSION(1,0,0)
+    )
+};
+}
+}

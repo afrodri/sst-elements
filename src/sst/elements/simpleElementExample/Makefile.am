@@ -3,7 +3,7 @@
 #
 
 AM_CPPFLAGS = \
-	$(MPI_CPPFLAGS) 
+	$(MPI_CPPFLAGS)
 
 compdir = $(pkglibdir)
 comp_LTLIBRARIES = libsimpleElementExample.la
@@ -26,12 +26,16 @@ libsimpleElementExample_la_SOURCES = \
 	simpleLookupTableComponent.cc \
 	simpleSubComponent.h \
 	simpleSubComponent.cc \
-	simpleSubComponentLegacy.h \
-	simpleSubComponentLegacy.cc \
 	simpleModule.h \
 	simpleModule.cc \
 	simpleParamComponent.h \
 	simpleParamComponent.cc
+
+deprecated_libsimpleElementExample_sources =
+
+if !SST_ENABLE_PREVIEW_BUILD
+libsimpleElementExample_la_SOURCES += $(deprecated_libsimpleElementExample_sources)
+endif
 
 EXTRA_DIST = \
     README \
@@ -49,9 +53,33 @@ EXTRA_DIST = \
     tests/test_simpleStatisticsComponent.py \
     tests/test_simpleMessageGeneratorComponent.py \
     tests/test_simpleSubComponent.py \
-    tests/test_simpleSubComponent_2.py
+    tests/test_simpleSubComponent_2.py \
+    tests/subcomponent_tests/test_sc_2a.py \
+    tests/subcomponent_tests/test_sc_2u2u.py \
+    tests/subcomponent_tests/test_sc_2u.py \
+    tests/subcomponent_tests/test_sc_a.py \
+    tests/subcomponent_tests/test_sc_u2u.py \
+    tests/subcomponent_tests/test_sc_u.py \
+    tests/subcomponent_tests/test_sc_2u2a.py \
+    tests/subcomponent_tests/test_sc_2ua.py \
+    tests/subcomponent_tests/test_sc_2uu.py \
+    tests/subcomponent_tests/test_sc_u2a.py \
+    tests/subcomponent_tests/test_sc_ua.py \
+    tests/subcomponent_tests/test_sc_uu.py
+
+
+deprecated_EXTRA_DIST = 
+
+if !SST_ENABLE_PREVIEW_BUILD
+EXTRA_DIST += $(deprecated_EXTRA_DIST)
+endif
+
 
 libsimpleElementExample_la_LDFLAGS = -module -avoid-version
+
+install-exec-hook:
+	$(SST_REGISTER_TOOL) SST_ELEMENT_SOURCE     simpleElementExample=$(abs_srcdir)
+	$(SST_REGISTER_TOOL) SST_ELEMENT_TESTS      simpleElementExample=$(abs_srcdir)/tests
 
 ##########################################################################
 ##########################################################################

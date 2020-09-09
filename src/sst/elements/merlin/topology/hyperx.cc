@@ -1,8 +1,8 @@
-// Copyright 2009-2019 NTESS. Under the terms
+// Copyright 2009-2020 NTESS. Under the terms
 // of Contract DE-NA0003525 with NTESS, the U.S.
 // Government retains certain rights in this software.
 // 
-// Copyright (c) 2009-2019, NTESS
+// Copyright (c) 2009-2020, NTESS
 // All rights reserved.
 // 
 // Portions are copyright of other developers:
@@ -24,17 +24,14 @@
 using namespace SST::Merlin;
 
 
-topo_hyperx::topo_hyperx(Component* comp, Params& params) :
-    Topology(comp)
+topo_hyperx::topo_hyperx(ComponentId_t cid, Params& params, int num_ports, int rtr_id, int num_vns) :
+    Topology(cid),
+    router_id(rtr_id),
+    num_vns(num_vns)
 {
-
     // Get the various parameters
-    router_id = params.find<int>("id",-1);
-    if ( router_id == -1 ) {
-    }
-
     std::string shape;
-    shape = params.find<std::string>("hyperx:shape");
+    shape = params.find<std::string>("shape");
     if ( !shape.compare("") ) {
     }
 
@@ -48,7 +45,7 @@ topo_hyperx::topo_hyperx(Component* comp, Params& params) :
 
     parseDimString(shape, dim_size);
 
-    std::string width = params.find<std::string>("hyperx:width", "");
+    std::string width = params.find<std::string>("width", "");
     if ( width.compare("") == 0 ) {
         for ( int i = 0 ; i < dimensions ; i++ )
             dim_width[i] = 1;
@@ -64,21 +61,17 @@ topo_hyperx::topo_hyperx(Component* comp, Params& params) :
     }
     // std::cout << std::endl;
 
-    num_local_ports = params.find<int>("hyperx:local_ports", 1);
+    num_local_ports = params.find<int>("local_ports", 1);
     local_port_start = next_port; // Local delivery is on the last ports
     // output.output("Local port start = %d\n",local_port_start);
     // std::cout << local_port_start << std::endl;
     // std::cout << num_local_ports << std::endl;
     
-    int n_ports = params.find<int>("num_ports",-1);
-    if ( n_ports == -1 )
-        output.fatal(CALL_INFO, -1, "Router must have 'num_ports' parameter set\n");
-    // std::cout << n_ports << std::endl;
 
     int needed_ports = local_port_start + num_local_ports;
     // std::cout << needed_ports << std::endl;
 
-    if ( n_ports < needed_ports ) {
+    if ( num_ports < needed_ports ) {
         output.fatal(CALL_INFO, -1, "Number of ports should be at least %d for this configuration\n", needed_ports);
     }
 
@@ -86,32 +79,55 @@ topo_hyperx::topo_hyperx(Component* comp, Params& params) :
     idToLocation(router_id, id_loc);
 
 
-    // Get the routing algorithm
-    std::string route_algo = params.find<std::string>("hyperx:algorithm", "DOR");
+    vns = new vn_info[num_vns];
 
-    if ( !route_algo.compare("DOAL") ) {
-        // std::cout << "Setting algorithm to DOAL" << std::endl;
-        algorithm = DOAL;
-    }
-    else if ( !route_algo.compare("valiant") ) {
-        algorithm = VALIANT;
-    }
-    else if ( !route_algo.compare("VDAL") ) {
-        algorithm = VDAL;
-    }
-    else if ( !route_algo.compare("DOR-ND") ) {
-        algorithm = DORND;
-    }
-    else if ( !route_algo.compare("DOR") ) {
-        algorithm = DOR;
-    }
-    else if ( !route_algo.compare("MIN-A") ) {
-        algorithm = MINA;
+    std::vector<std::string> vn_route_algos;
+    if ( params.is_value_array("algorithm") ) {
+        params.find_array<std::string>("algorithm", vn_route_algos);
+        if ( vn_route_algos.size() != num_vns ) {
+            fatal(CALL_INFO, -1, "ERROR: When specifying routing algorithms per VN, algorithm list length must match number of VNs (%d VNs, %lu algorithms).\n",num_vns,vn_route_algos.size());        
+        }
     }
     else {
-        output.fatal(CALL_INFO,-1,"Unknown routing mode specified: %s\n",route_algo.c_str());
+        std::string route_algo = params.find<std::string>("algorithm", "DOR");
+        for ( int i = 0; i < num_vns; ++i ) vn_route_algos.push_back(route_algo);
     }
 
+    // Setup the routing algorithms
+    int curr_vc = 0;
+    for ( int i = 0; i < num_vns; ++i ) {
+        vns[i].start_vc = curr_vc;
+        if ( !vn_route_algos[i].compare("DOAL") ) {
+            // std::cout << "Setting algorithm to DOAL" << std::endl;
+            vns[i].algorithm = DOAL;
+            vns[i].num_vcs = 2;
+        }
+        else if ( !vn_route_algos[i].compare("valiant") ) {
+            vns[i].algorithm = VALIANT;
+            vns[i].num_vcs = 2;
+        }
+        else if ( !vn_route_algos[i].compare("VDAL") ) {
+            vns[i].algorithm = VDAL;
+            vns[i].num_vcs = 2 * dimensions;
+        }
+        else if ( !vn_route_algos[i].compare("DOR-ND") ) {
+            vns[i].algorithm = DORND;
+            vns[i].num_vcs = 1;
+        }
+        else if ( !vn_route_algos[i].compare("DOR") ) {
+            vns[i].algorithm = DOR;
+            vns[i].num_vcs = 1;
+        }
+        else if ( !vn_route_algos[i].compare("MIN-A") ) {
+            vns[i].algorithm = MINA;
+            vns[i].num_vcs = dimensions;
+        }
+        else {
+            output.fatal(CALL_INFO,-1,"Unknown routing mode specified: %s\n",vn_route_algos[i].c_str());
+        }
+        curr_vc += vns[i].num_vcs;
+    }
+    
     rng = new RNG::XORShiftRNG(router_id+1);
     rng_func = new RNGFunc(rng);
     
@@ -119,11 +135,14 @@ topo_hyperx::topo_hyperx(Component* comp, Params& params) :
     for (int i = 0; i < dimensions; ++i ) {
         total_routers *= dim_size[i];
     }
+
+    
     
 }
 
 topo_hyperx::~topo_hyperx()
 {
+    delete [] vns;
     delete [] id_loc;
     delete [] dim_size;
     delete [] dim_width;
@@ -131,43 +150,38 @@ topo_hyperx::~topo_hyperx()
 }
 
 void
-topo_hyperx::route(int port, int vc, internal_router_event* ev)
+topo_hyperx::route_packet(int port, int vc, internal_router_event* ev)
 {
-
     topo_hyperx_event *tt_ev = static_cast<topo_hyperx_event*>(ev);
     tt_ev->rerouted = false;
 
-    routeDOR(port,vc,tt_ev);    
-}
+    // Always have to compute the DOR route
+    routeDOR(port,vc,tt_ev);
 
-void topo_hyperx::reroute(int port, int vc, internal_router_event* ev)
-{
-
-    topo_hyperx_event* tt_ev = static_cast<topo_hyperx_event*>(ev);
-    if ( tt_ev->rerouted ) return;
-    tt_ev->rerouted = true;
+    int vn = ev->getVN();
     
-    if ( algorithm == DOR ) {
+    // Check the routing algorithm and call the right function
+    if ( vns[vn].algorithm == DOR ) {
         return;
     }
 
-    if ( algorithm == DORND ) {
+    if ( vns[vn].algorithm == DORND ) {
         return routeDORND(port,vc,tt_ev);
     }
 
-    if ( algorithm == MINA ) {
+    if ( vns[vn].algorithm == MINA ) {
         return routeMINA(port,vc,tt_ev);
     }
 
-    else if ( algorithm == VALIANT ) {
+    else if ( vns[vn].algorithm == VALIANT ) {
         return routeValiant(port,vc,tt_ev);
     }
 
-    else if ( algorithm == DOAL ) {
+    else if ( vns[vn].algorithm == DOAL ) {
         return routeDOAL(port,vc,tt_ev);
     }
 
-    else if ( algorithm == VDAL ) {
+    else if ( vns[vn].algorithm == VDAL ) {
         return routeVDAL(port,vc,tt_ev);
     }
     
@@ -185,13 +199,11 @@ topo_hyperx::process_input(RtrEvent* ev)
 {
     topo_hyperx_event* tt_ev = new topo_hyperx_event(dimensions);
     tt_ev->setEncapsulatedEvent(ev);
-    tt_ev->setVC(num_vcs * ev->request->vn);
-    if ( algorithm == VALIANT ) {
+    tt_ev->setVC(vns[tt_ev->getVN()].start_vc);
+    if ( vns[tt_ev->getVN()].algorithm == VALIANT ) {
         int mid;
         do {
             mid = rng->generateNextUInt32() % total_routers;
-            // idToLocation(mid, tt_ev->val_loc);
-        // } while ( tt_ev->val_loc[0] == tt_ev->dest_loc[0] || tt_ev->val_loc[1] == tt_ev->dest_loc[1] );
         } while ( mid == router_id );
 
         idToLocation(mid, tt_ev->val_loc);
@@ -209,12 +221,8 @@ topo_hyperx::process_input(RtrEvent* ev)
 
 void topo_hyperx::routeInitData(int port, internal_router_event* ev, std::vector<int> &outPorts)
 {
-    // TraceFunction trace(CALL_INFO);
     // topo_hyperx_init_event *tt_ev = static_cast<topo_hyperx_init_event*>(ev);
     if ( ev->getDest() == INIT_BROADCAST_ADDR ) {
-        // trace.getOutput().output("  broadcast\n");
-        // trace.getOutput().output("    router index = %d,%d,%d\n",id_loc[0],id_loc[1],id_loc[2]);
-        // trace.getOutput().output("    input port = %d\n",port);
         // Figure out what dimension it came in on.  Next to forward
         // to all higher dimensions and to hosts
         int start_dim = 0;
@@ -226,35 +234,26 @@ void topo_hyperx::routeInitData(int port, internal_router_event* ev, std::vector
                 else break;
             }
         }
-        // trace.getOutput().output("      start_dim = %d\n",start_dim);
         
         // Need to send in all the higher dimensions and to local
         // ports
         for ( int i = 0; i < num_local_ports; ++i ) {
             if ( port != local_port_start + i ) {
-                // trace.getOutput().output("    output port = %d\n",local_port_start + i);
                 outPorts.push_back(local_port_start + i);
             }
         }
 
         for ( int i = start_dim; i < dimensions; ++i ) {
             for ( int j = 0; j < dim_size[i] - 1; ++j ) {
-                // trace.getOutput().output("    output port = %d\n",port_start[i] + (j * dim_width[i]));
                 outPorts.push_back(port_start[i] + (j * dim_width[i]));
             }
         }
     }
     else {
-        route(port, 0, ev);
+        routeDOR(port, 0, static_cast<topo_hyperx_event*>(ev));
         outPorts.push_back(ev->getNextPort());
     }
     
-    // // Also, send to hosts
-    // for ( int p = 0 ; p < num_local_ports ; p++ ) {
-    //     if ( (local_port_start + p) != port ) {
-    //         outPorts.push_back(local_port_start +p);
-    //     }
-    // }
 }
 
 
@@ -262,7 +261,7 @@ internal_router_event* topo_hyperx::process_InitData_input(RtrEvent* ev)
 {
     topo_hyperx_init_event* tt_ev = new topo_hyperx_init_event(dimensions);
     tt_ev->setEncapsulatedEvent(ev);
-    tt_ev->setVC(2*ev->request->vn);
+    tt_ev->setVC(vns[tt_ev->getVN()].start_vc);
     if ( tt_ev->getDest() != INIT_BROADCAST_ADDR ) {
         int rtr_id = get_dest_router(tt_ev->getDest());
         idToLocation(rtr_id, tt_ev->dest_loc);
@@ -339,22 +338,6 @@ topo_hyperx::choose_multipath(int start_port, int num_ports)
     // } else {
     //     return start_port + (dest_dist % num_ports);
     // }
-}
-
-int
-topo_hyperx::computeNumVCs(int vns)
-{
-    switch ( algorithm ) {
-    case VDAL:
-        return 2 * dimensions * vns;
-    case MINA:
-        return dimensions;
-    case DOR:
-    case DORND:
-        return 1;
-    default:
-        return 2; 
-    }
 }
 
 int
@@ -490,17 +473,13 @@ topo_hyperx::routeDOAL(int port, int vc, topo_hyperx_event* ev) {
         ev->setNextPort(get_dest_local_port(ev->getDest()));
     }
     else {
-        // topo_hyperx_event *tt_ev = static_cast<topo_hyperx_event*>(ev);
-        
         for ( int dim = 0 ; dim < dimensions ; dim++ ) {
             if ( ev->dest_loc[dim] == id_loc[dim] ) continue;
 
-            // output.output(" Routing in dimension: %d\n",dim);
-
-            //Found the dimension to route in.  See if we have already
-            // adaptively routed, if so, then we have to go direct for
-            // this dimension
-            if ( (vc & 0x1) == 1 ) {
+            // Found the dimension to route in.  See if we have
+            // already adaptively routed, if so, then we have to go
+            // direct for this dimension
+            if ( ( vc - vns[ev->getVN()].start_vc ) == 1 ) {
                 // Get offset in the dimension
                 int offset = ev->dest_loc[dim] - ((ev->dest_loc[dim] > id_loc[dim]) ? 1 : 0);
                 offset *= dim_width[dim];
@@ -568,7 +547,6 @@ topo_hyperx::routeDOAL(int port, int vc, topo_hyperx_event* ev) {
                 // Route on the minimally weighted port
                 ev->setNextPort(min_port);
                 ev->setVC(min_vc);
-                // output.output("    Starting new dimension.  Routing out port: %d, vc: %d\n",min_port,min_vc);
                 break;
             }
         }
@@ -589,9 +567,10 @@ topo_hyperx::routeMINA(int port, int vc, topo_hyperx_event* ev) {
     // We can route in any unaligned dimension, but we have to take
     // only minimal routes
 
+    int vn = ev->getVN();
     // If this is just coming into the network from and endpoint, we
     // need to set the vc to -1 in order for the logic below to work
-    int start_vc = port >= local_port_start ? -1 : vc;
+    int vc_in_vn = port >= local_port_start ? -1 : vc - vns[vn].start_vc;
 
     int min_weight = 0x7fffffff;;
     int min_port = -1;
@@ -603,7 +582,7 @@ topo_hyperx::routeMINA(int port, int vc, topo_hyperx_event* ev) {
         offset = port_start[dim] + (offset * dim_width[dim]);
 
         for ( int i = offset; i < offset + dim_width[dim]; ++i ) {
-            int weight = output_queue_lengths[(i * num_vcs) + start_vc + 1];
+            int weight = output_queue_lengths[(i * num_vcs) + vns[vn].start_vc + vc_in_vn + 1];
             if ( weight < min_weight ) {
                 min_port = i;
                 min_weight = weight;
@@ -612,15 +591,13 @@ topo_hyperx::routeMINA(int port, int vc, topo_hyperx_event* ev) {
     }
     // Route on the minimally weighted port
     ev->setNextPort(min_port);
-    ev->setVC(start_vc + 1);
+    ev->setVC(vns[vn].start_vc + vc_in_vn + 1);
 
 }
 
 
 void
 topo_hyperx::routeVDAL(int port, int vc, topo_hyperx_event* ev) {
-    // TraceFunction trace(CALL_INFO);
-    // trace.getOutput().output("(%d,%d) : (%d,%d)\n",id_loc[0],id_loc[1],ev->dest_loc[0],ev->dest_loc[1]);
     // Check to see if we made it to the dest router
     int dest_router = get_dest_router(ev->getDest());
     if ( dest_router == router_id ) {
@@ -631,22 +608,21 @@ topo_hyperx::routeVDAL(int port, int vc, topo_hyperx_event* ev) {
 
     // Not there yet, need to figure out what dimensions we can
     // route in (we will not route in an aligned dimension)
-
+    int vn = ev->getVN();
+    
     // Get the unaligned dimensions
     std::vector<int> udims;
     ev->getUnalignedDimensions(id_loc,udims);
 
 
-    // If this is just coming into the network from and endpoint, we
+    // If this is just coming into the network from an endpoint, we
     // need to set the vc to -1 in order for the logic below to work
-    int start_vc = port >= local_port_start ? -1 : vc;
+    int vc_in_vn = port >= local_port_start ? -1 : vc - vns[vn].start_vc;
 
 
-    // trace.getOutput().output("%llu: udims.size = %lu, remaining_vcs = %d\n",ev->id.first,udims.size(),num_vcs - start_vc - 1 );
     // Check to see if there are extra VCs for misroutes.  If not,
     // simply fall back to MIN-A routing
-    if ( udims.size() == num_vcs - start_vc - 1 ) {
-        // trace.getOutput().output("Falling back to MIN-A, udims.size = %lu, remaining_vcs = %d\n",udims.size(),num_vcs - start_vc - 1 );
+    if ( udims.size() == vns[vn].num_vcs - vc_in_vn - 1 ) {
         return routeMINA(port,vc,ev);
     }
     
@@ -657,10 +633,9 @@ topo_hyperx::routeVDAL(int port, int vc, topo_hyperx_event* ev) {
 
     int min_weight = 0x7fffffff;
     std::vector<int> min_ports;
-    int next_vc = start_vc + 1;
+    int next_vc = vc_in_vn + vns[vn].start_vc + 1;
 
     for (int dim : udims ) {
-        // trace.getOutput().output("looking at dimension %d\n",dim);
         // Within each dimension, look at all the possible routes
 
         int offset = 0;
@@ -698,14 +673,12 @@ topo_hyperx::routeVDAL(int port, int vc, topo_hyperx_event* ev) {
                     min_weight = weight;
                     min_ports.clear();
                     min_ports.push_back(next_port);
-                    // ev->last_routing_dim = dim;
                 }
             }
             offset++;
         }        
     }
     // Route on the minimally weighted port
-    // trace.getOutput().output("min_port = %d, next_vc = %d, min_weight = %d\n",min_port,next_vc,min_weight);
 
     // Randomly choose from the minports
     int min_port = min_ports[rng->generateNextUInt32() % min_ports.size()];

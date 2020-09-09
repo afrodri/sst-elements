@@ -43,6 +43,8 @@ libfirefly_la_SOURCES = \
 	funcSM/size.h \
 	funcSM/alltoallv.h \
 	funcSM/alltoallv.cc \
+	funcSM/scatterv.h \
+	funcSM/scatterv.cc \
 	funcSM/gatherv.h \
 	funcSM/gatherv.cc \
 	funcSM/allgather.cc \
@@ -123,6 +125,7 @@ libfirefly_la_SOURCES = \
 	memoryModel/cache.h \
 	memoryModel/unit.h \
 	memoryModel/detailedUnit.h \
+	memoryModel/detailedInterface.h \
 	merlinEvent.h \
 	virtNic.h \
 	virtNic.cc \
@@ -160,3 +163,6 @@ libfirefly_la_SOURCES = \
 	nodePerf.h
 
 libfirefly_la_LDFLAGS = -module -avoid-version
+
+install-exec-hook:
+	$(SST_REGISTER_TOOL) SST_ELEMENT_SOURCE     firefly=$(abs_srcdir)

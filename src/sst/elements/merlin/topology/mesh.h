@@ -1,10 +1,10 @@
 // -*- mode: c++ -*-
 
-// Copyright 2009-2019 NTESS. Under the terms
+// Copyright 2009-2020 NTESS. Under the terms
 // of Contract DE-NA0003525 with NTESS, the U.S.
 // Government retains certain rights in this software.
 //
-// Copyright (c) 2009-2019, NTESS
+// Copyright (c) 2009-2020, NTESS
 // All rights reserved.
 //
 // Portions are copyright of other developers:
@@ -99,18 +99,22 @@ class topo_mesh: public Topology {
 
 public:
 
-    SST_ELI_REGISTER_SUBCOMPONENT(
+    SST_ELI_REGISTER_SUBCOMPONENT_DERIVED(
         topo_mesh,
         "merlin",
         "mesh",
         SST_ELI_ELEMENT_VERSION(1,0,0),
         "Multi-dimensional mesh topology object",
-        "SST::Merlin::Topology")
-    
+        SST::Merlin::Topology)
+
     SST_ELI_DOCUMENT_PARAMS(
         {"mesh:shape",        "Shape of the mesh specified as the number of routers in each dimension, where each dimension is separated by a colon.  For example, 4x4x2x2.  Any number of dimensions is supported."},
         {"mesh:width",        "Number of links between routers in each dimension, specified in same manner as for shape.  For example, 2x2x1 denotes 2 links in the x and y dimensions and one in the z dimension."},
-        {"mesh:local_ports",  "Number of endpoints attached to each router."}
+        {"mesh:local_ports",  "Number of endpoints attached to each router."},
+
+        {"shape",        "Shape of the mesh specified as the number of routers in each dimension, where each dimension is separated by a colon.  For example, 4x4x2x2.  Any number of dimensions is supported."},
+        {"width",        "Number of links between routers in each dimension, specified in same manner as for shape.  For example, 2x2x1 denotes 2 links in the x and y dimensions and one in the z dimension."},
+        {"local_ports",  "Number of endpoints attached to each router."}
     )
 
 
@@ -127,20 +131,27 @@ private:
     int num_local_ports;
     int local_port_start;
 
+    int num_vns;
+    
 public:
-    topo_mesh(Component* comp, Params& params);
+    topo_mesh(ComponentId_t cid, Params& params, int num_ports, int rtr_id, int num_vns);
     ~topo_mesh();
 
-    virtual void route(int port, int vc, internal_router_event* ev);
+    virtual void route_packet(int port, int vc, internal_router_event* ev);
     virtual internal_router_event* process_input(RtrEvent* ev);
 
     virtual void routeInitData(int port, internal_router_event* ev, std::vector<int> &outPorts);
     virtual internal_router_event* process_InitData_input(RtrEvent* ev);
 
     virtual PortState getPortState(int port) const;
-    virtual int computeNumVCs(int vns);
     virtual int getEndpointID(int port);
 
+    virtual void getVCsPerVN(std::vector<int>& vcs_per_vn) {
+        for ( int i = 0; i < num_vns; ++i ) {
+            vcs_per_vn[i] = 1;
+        }
+    }
+    
 protected:
     virtual int choose_multipath(int start_port, int num_ports, int dest_dist);
 

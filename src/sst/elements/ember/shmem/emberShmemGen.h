@@ -1,8 +1,8 @@
-// Copyright 2009-2019 NTESS. Under the terms
+// Copyright 2009-2020 NTESS. Under the terms
 
 // Government retains certain rights in this software.
 //
-// Copyright (c) 2009-2019, NTESS
+// Copyright (c) 2009-2020, NTESS
 // All rights reserved.
 //
 // Portions are copyright of other developers:
@@ -18,6 +18,7 @@
 
 #include "embergen.h"
 #include "libs/emberShmemLib.h"
+#include "libs/misc.h"
 
 #define enQ_init shmem().init
 #define enQ_n_pes shmem().n_pes
@@ -107,12 +108,15 @@ class EmberShmemGenerator : public EmberGenerator {
 
 public:
 
-	EmberShmemGenerator( Component* owner, Params& params, std::string name );
+	EmberShmemGenerator( ComponentId_t, Params& params, std::string name ="");
 	~EmberShmemGenerator() {}
     virtual void completed( const SST::Output*, uint64_t time ) {}
+	virtual void setup();
 
 protected:
 	EmberShmemLib& shmem() { return *m_shmem; };
+
+	EmberMiscLib* m_miscLib;
 
 private:
 	EmberShmemLib* m_shmem;

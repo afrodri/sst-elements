@@ -1,8 +1,8 @@
-// Copyright 2009-2019 NTESS. Under the terms
+// Copyright 2009-2020 NTESS. Under the terms
 // of Contract DE-NA0003525 with NTESS, the U.S.
 // Government retains certain rights in this software.
 //
-// Copyright (c) 2009-2019, NTESS
+// Copyright (c) 2009-2020, NTESS
 // All rights reserved.
 //
 // Portions are copyright of other developers:
@@ -41,7 +41,7 @@ public:
         SST_ELI_ELEMENT_VERSION(1,0,0),
         "Bridge between two memory networks.",
         COMPONENT_CATEGORY_NETWORK)
-    
+
     SST_ELI_DOCUMENT_PARAMS(
         {"translator",                "Translator backend.  Inherit from SST::Merlin::Bridge::Translator.", NULL},
         {"debug",                     "0 (default): No debugging, 1: STDOUT, 2: STDERR, 3: FILE.", "0"},
@@ -63,6 +63,12 @@ public:
         {"network1",     "Network Link",  {} },
     )
 
+    SST_ELI_DOCUMENT_SUBCOMPONENT_SLOTS(
+        {"translator", "Element to translate between the two networks.", "SST::Merlin::Bridge::Translator" },
+        {"networkIF", "Element to interface to networks.  There are two IFs that need to be loaded (index 0 and 1).",
+         "SST::Interfaces::SimpleNetwork" }
+    )
+
     Bridge(SST::ComponentId_t id, SST::Params &params);
     ~Bridge();
     void init(unsigned int);
@@ -72,8 +78,12 @@ public:
     SimpleNetwork::nid_t getAddrForNetwork(uint8_t netID) { return interfaces[netID].getAddr(); }
 
     class Translator : public SST::SubComponent {
+        Bridge* bridge;
     public:
-        Translator(SST::Component *bridge, Params &params) : SubComponent(bridge) { }
+
+        SST_ELI_REGISTER_SUBCOMPONENT_API(SST::Merlin::Bridge::Translator, Bridge*)
+
+        Translator(SST::ComponentId_t cid, Params &params, Bridge* bridge) : SubComponent(cid), bridge(bridge) { }
         virtual void init(unsigned int) { }
         virtual void setup(void) { }
         virtual void finish(void) { }
@@ -96,7 +106,7 @@ public:
         virtual SimpleNetwork::Request* initTranslate(SimpleNetwork::Request* req, uint8_t fromNetwork) = 0;
 
         SimpleNetwork::nid_t getAddrForNetwork(uint8_t netID) {
-            return static_cast<Bridge*>(parent)->getAddrForNetwork(netID);
+            return bridge->getAddrForNetwork(netID);
         }
     };
 

@@ -1,8 +1,8 @@
-// Copyright 2009-2019 NTESS. Under the terms
+// Copyright 2009-2020 NTESS. Under the terms
 // of Contract DE-NA0003525 with NTESS, the U.S.
 // Government retains certain rights in this software.
 //
-// Copyright (c) 2009-2019, NTESS
+// Copyright (c) 2009-2020, NTESS
 // All rights reserved.
 //
 // Portions are copyright of other developers:
@@ -40,9 +40,7 @@ class MemBackendConvertor : public SubComponent {
 /* ELI definitions for subclasses */
 #define MEMBACKENDCONVERTOR_ELI_PARAMS {"debug_level",     "(uint) Debugging level: 0 (no output) to 10 (all output). Output also requires that SST Core be compiled with '--enable-debug'", "0"},\
             {"debug_mask",      "(uint) Mask on debug_level", "0"},\
-            {"debug_location",  "(uint) 0: No debugging, 1: STDOUT, 2: STDERR, 3: FILE", "0"},\
-            {"request_width",   "(uint) Max size of a request that can be accepted by the memory controller", "64"},\
-            {"backend",         "Backend memory model to use for timing. Defaults to 'simpleMem'", "memHierarchy.simpleMem"}
+            {"debug_location",  "(uint) 0: No debugging, 1: STDOUT, 2: STDERR, 3: FILE", "0"}
 
 #define MEMBACKENDCONVERTOR_ELI_STATS { "cycles_with_issue",                  "Total cycles with successful issue to back end",   "cycles",   1 },\
             { "cycles_attempted_issue_but_rejected","Total cycles where an attempt to issue to backend was rejected (indicates backend full)", "cycles", 1 },\
@@ -56,9 +54,8 @@ class MemBackendConvertor : public SubComponent {
             { "latency_GetSX",                      "Total latency of handled GetSX requests",          "cycles",   1 },\
             { "latency_GetX",                       "Total latency of handled GetX requests",           "cycles",   1 },\
             { "latency_PutM",                       "Total latency of handled PutM requests",           "cycles",   1 }
-#define MEMBACKENDCONVERTOR_ELI_SLOTS {"backend", "Backend memory model", "SST::MemHierarchy::MemBackend"}
 
-    SST_ELI_REGISTER_SUBCOMPONENT_API(SST::MemHierarchy::MemBackendConvertor)
+    SST_ELI_REGISTER_SUBCOMPONENT_API(SST::MemHierarchy::MemBackendConvertor, MemBackend*, uint32_t)
 
     typedef uint64_t ReqId;
 
@@ -91,7 +88,7 @@ class MemBackendConvertor : public SubComponent {
 
     class CustomReq : public BaseReq {
     public:
-        CustomReq(CustomCmdInfo * info, uint32_t reqId) : BaseReq(reqId, BaseReq::ReqType::CUSTOM), 
+        CustomReq(CustomCmdInfo * info, uint32_t reqId) : BaseReq(reqId, BaseReq::ReqType::CUSTOM),
             m_info(info) { }
         ~CustomReq() { }
 
@@ -105,7 +102,7 @@ class MemBackendConvertor : public SubComponent {
 
     class MemReq : public BaseReq {
       public:
-        MemReq( MemEvent* event, uint32_t reqId ) : BaseReq(reqId, BaseReq::ReqType::MEM), 
+        MemReq( MemEvent* event, uint32_t reqId ) : BaseReq(reqId, BaseReq::ReqType::MEM),
             m_event(event), m_offset(0), m_numReq(0) { }
         ~MemReq() { }
 
@@ -147,12 +144,9 @@ class MemBackendConvertor : public SubComponent {
 
   public:
 
-    MemBackendConvertor();
-    MemBackendConvertor(Component* comp, Params& params);
-    MemBackendConvertor(ComponentId_t id, Params& params);
+    MemBackendConvertor(ComponentId_t id, Params& params, MemBackend* backend, uint32_t request_width);
     void build(Params& params);
     void finish(void);
-    virtual const std::string& getClockFreq();
     virtual size_t getMemSize();
     virtual bool clock( Cycle_t cycle );
     virtual void turnClockOff();
@@ -162,7 +156,7 @@ class MemBackendConvertor : public SubComponent {
     virtual uint32_t getRequestWidth();
     virtual bool isBackendClocked() { return m_clockBackend; }
 
-    virtual const std::string getRequestor( ReqId reqId ) { 
+    virtual const std::string getRequestor( ReqId reqId ) {
         uint32_t id = BaseReq::getBaseId(reqId);
         if ( m_pendingRequests.find( id ) == m_pendingRequests.end() ) {
             m_dbg.fatal(CALL_INFO, -1, "memory request not found\n");
@@ -170,14 +164,14 @@ class MemBackendConvertor : public SubComponent {
 
         return m_pendingRequests[id]->getRqstr();
     }
-    
+
     virtual void setCallbackHandlers(std::function<void(Event::id_type,uint32_t)> responseCB, std::function<Cycle_t()> clockenableCB);
 
     // generates a MemReq for the target custom command
     // this is utilized by inherited ExtMemBackendConvertor's
     // such that all the requests are consolidated in one place
   protected:
-    ~MemBackendConvertor() {
+    virtual ~MemBackendConvertor() {
         while ( m_requestQueue.size()) {
             delete m_requestQueue.front();
             m_requestQueue.pop_front();
@@ -221,7 +215,7 @@ class MemBackendConvertor : public SubComponent {
 
             if (dependsOn.empty()) return false;
             m_waitingFlushes.insert(std::make_pair(ev, dependsOn));
-            return true; 
+            return true;
         }
 
         uint32_t id = genReqId();
@@ -232,12 +226,12 @@ class MemBackendConvertor : public SubComponent {
     }
 
     inline void doClockStat( ) {
-        stat_totalCycles->addData(1);        
+        stat_totalCycles->addData(1);
     }
 
     void doReceiveStat( Command cmd) {
-        switch (cmd ) { 
-            case Command::GetS: 
+        switch (cmd ) {
+            case Command::GetS:
                 stat_GetSReqReceived->addData(1);
                 break;
             case Command::GetX:
@@ -278,18 +272,18 @@ class MemBackendConvertor : public SubComponent {
     uint64_t m_cycleCount;
 
     bool m_clockOn;
-    
+
     // Callback functions to parent component
     std::function<Cycle_t()> m_enableClock; // Re-enable parent's clock
     std::function<void(Event::id_type id, uint32_t)> m_notifyResponse; // notify parent of response
 
     uint32_t genReqId( ) { return ++m_reqId; }
 
-    uint32_t    m_reqId;
+    uint32_t m_reqId;
 
-    typedef std::map<uint32_t,BaseReq*>    PendingRequests;
+    typedef std::map<uint32_t,BaseReq*> PendingRequests;
 
-    std::deque<BaseReq*>     m_requestQueue;
+    std::deque<BaseReq*>    m_requestQueue;
     PendingRequests         m_pendingRequests;
     uint32_t                m_frontendRequestWidth;
 

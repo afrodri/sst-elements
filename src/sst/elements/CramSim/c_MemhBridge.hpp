@@ -1,8 +1,8 @@
-// Copyright 2009-2016 NTESS. Under the terms
+// Copyright 2009-2020 NTESS. Under the terms
 // of Contract DE-NA0003525 with NTESS, the U.S.
 // Government retains certain rights in this software.
 //
-// Copyright (c) 2009-2016, NTESS
+// Copyright (c) 2009-2020, NTESS
 // All rights reserved.
 //
 // Portions are copyright of other developers:
@@ -31,13 +31,13 @@
 #include "c_TxnGen.hpp"
 
 namespace SST {
-namespace n_Bank {
-    
+namespace CramSim {
+
 #if defined(__clang__)
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Winconsistent-missing-override"
 #endif
-    
+
 class c_MemhBridge: public c_TxnGenBase {
 
 
@@ -78,10 +78,10 @@ public:
 
 private:
 	void createTxn();
-	void readResponse(); //read from res q to output
+	bool readResponse(); //read from res q to output
 
         void printTxn(bool isWrite, uint64_t addr);
-	
+
         //Debug
 	Output *output;
 
@@ -104,7 +104,7 @@ private:
 #pragma clang diagnostic pop
 #endif
 
-} // namespace n_Bank
+} // namespace CramSim
 } // namespace SST
 
 #endif  /* _TXNGENRAND_H */

@@ -1,8 +1,8 @@
-// Copyright 2009-2019 NTESS. Under the terms
+// Copyright 2009-2020 NTESS. Under the terms
 // of Contract DE-NA0003525 with NTESS, the U.S.
 // Government retains certain rights in this software.
 //
-// Copyright (c) 2009-2019, NTESS
+// Copyright (c) 2009-2020, NTESS
 // All rights reserved.
 //
 // Portions are copyright of other developers:
@@ -19,9 +19,9 @@
 
 using namespace SST::Ember;
 
-EmberStopGenerator::EmberStopGenerator(SST::Component* owner,
+EmberStopGenerator::EmberStopGenerator(SST::ComponentId_t id,
                                                 Params& params) :
-	EmberMessagePassingGenerator(owner, params, "Stop"),
+	EmberMessagePassingGenerator(id, params, "Stop"),
     m_loopIndex(0)
 {
 	m_iterations = (uint32_t) params.find("arg.iterations", 1);
@@ -48,7 +48,7 @@ bool EmberStopGenerator::generate( std::queue<EmberEvent*>& evQ )
     }
 
     enQ_compute( evQ, m_compute );
-    enQ_barrier( evQ, GroupWorld ); 
+    enQ_barrier( evQ, GroupWorld );
 
     if ( ++m_loopIndex == m_iterations ) {
         enQ_getTime( evQ, &m_stopTime );

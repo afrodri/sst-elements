@@ -1,8 +1,8 @@
-// Copyright 2009-2019 NTESS. Under the terms
+// Copyright 2009-2020 NTESS. Under the terms
 // of Contract DE-NA0003525 with NTESS, the U.S.
 // Government retains certain rights in this software.
 //
-// Copyright (c) 2009-2019, NTESS
+// Copyright (c) 2009-2020, NTESS
 // All rights reserved.
 //
 // Portions are copyright of other developers:
@@ -44,10 +44,14 @@ namespace Ember {
 
 #define enQ_barrier mpi().barrier
 #define enQ_bcast mpi().bcast
+#define enQ_scatter mpi().scatter
+#define enQ_scatterv mpi().scatterv
 #define enQ_reduce mpi().reduce
 #define enQ_allreduce mpi().allreduce
 #define enQ_alltoall mpi().alltoall
 #define enQ_alltoallv mpi().alltoallv
+#define enQ_allgather mpi().allgather
+#define enQ_allgatherv mpi().allgatherv
 
 #define enQ_commSplit mpi().commSplit
 #define enQ_commCreate mpi().commCreate
@@ -57,7 +61,7 @@ class EmberMessagePassingGenerator : public EmberGenerator {
 
 public:
 
-	EmberMessagePassingGenerator( Component* owner, Params& params, std::string name = "" );
+	EmberMessagePassingGenerator( ComponentId_t id, Params& params, std::string name = "" );
 	~EmberMessagePassingGenerator();
 
     virtual void completed( const SST::Output* output, uint64_t time ) {
@@ -90,7 +94,7 @@ protected:
 	}
 
 	ReductionOperation op_create( User_function* func, int commute ) {
-		return Hermes::MP::Op_create( func, commute ); 
+		return Hermes::MP::Op_create( func, commute );
 	}
 
 	void op_free( ReductionOperation op ) {
@@ -104,7 +108,7 @@ protected:
 	int get_count( MessageResponse* resp, PayloadDataType datatype, int* count ) {
 		uint32_t nbytes = resp->count * resp->dtypeSize;
 		int dtypesize = sizeofDataType(datatype);
-		if ( nbytes % dtypesize ) { 
+		if ( nbytes % dtypesize ) {
 			*count = 0;
 			return -1;
 		}

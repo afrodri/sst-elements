@@ -12,7 +12,6 @@ libmemHierarchy_la_SOURCES = \
 	hash.h \
 	cacheListener.h \
 	cacheController.h \
-	cacheEventProcessing.cc \
 	cacheController.cc \
 	cacheFactory.cc \
 	replacementManager.h \
@@ -20,6 +19,8 @@ libmemHierarchy_la_SOURCES = \
 	bus.cc \
 	memoryController.h \
 	memoryController.cc \
+	memoryCacheController.h \
+	memoryCacheController.cc \
 	coherentMemoryController.h \
 	coherentMemoryController.cc \
 	membackend/timingDRAMBackend.cc \
@@ -61,6 +62,7 @@ libmemHierarchy_la_SOURCES = \
 	memEvent.h \
 	moveEvent.h \
 	memLinkBase.h \
+	memNICBase.h \
 	memLink.h \
 	memLink.cc \
 	memNIC.h \
@@ -82,19 +84,21 @@ libmemHierarchy_la_SOURCES = \
 	memHierarchyInterface.h \
 	memHierarchyScratchInterface.cc \
 	memHierarchyScratchInterface.h \
-	coherencemgr/MESIInternalDirectory.h \
-	coherencemgr/MESIInternalDirectory.cc \
-	coherencemgr/MESICoherenceController.h \
-	coherencemgr/MESICoherenceController.cc \
-	coherencemgr/IncoherentController.h \
-	coherencemgr/IncoherentController.cc \
-	coherencemgr/L1IncoherentController.h \
-	coherencemgr/L1IncoherentController.cc \
-	coherencemgr/L1CoherenceController.h \
-	coherencemgr/L1CoherenceController.cc \
+	coherencemgr/MESI_L1.h \
+	coherencemgr/MESI_L1.cc \
+	coherencemgr/MESI_Inclusive.h \
+	coherencemgr/MESI_Inclusive.cc \
+	coherencemgr/MESI_Private_Noninclusive.h \
+	coherencemgr/MESI_Private_Noninclusive.cc \
+	coherencemgr/MESI_Shared_Noninclusive.h \
+	coherencemgr/MESI_Shared_Noninclusive.cc \
+	coherencemgr/Incoherent_L1.h \
+	coherencemgr/Incoherent_L1.cc \
+	coherencemgr/Incoherent.h \
+	coherencemgr/Incoherent.cc \
 	multithreadL1Shim.h \
 	multithreadL1Shim.cc \
-	cacheArray.cc \
+	lineTypes.h \
 	cacheArray.h \
 	mshr.h \
 	mshr.cc \
@@ -129,7 +133,6 @@ EXTRA_DIST = \
         Sieve/tests/Makefile \
         Sieve/tests/ompsievetest.c \
         Sieve/tests/sieve-test.py \
-	tests/example.py \
 	tests/miranda.cfg \
 	tests/sdl-1.py \
 	tests/sdl2-1.py \
@@ -172,6 +175,7 @@ EXTRA_DIST = \
 	tests/testHashXor.py \
 	tests/testIncoherent.py \
 	tests/testKingsley.py \
+	tests/testMemoryCache.py \
 	tests/testNoninclusive-1.py \
 	tests/testNoninclusive-2.py \
 	tests/testPrefetchParams.py \
@@ -185,12 +189,14 @@ EXTRA_DIST = \
 	tests/ddr_system.ini \
 	tests/hbm_device.ini \
 	tests/hbm_system.ini \
-	tests/utils.py
+	tests/utils.py \
+	tests/mhlib.py
 
 sstdir = $(includedir)/sst/elements/memHierarchy
 nobase_sst_HEADERS = \
 	memEventBase.h \
 	memEvent.h \
+	memNICBase.h \
 	memNIC.h \
 	memNICFour.h \
 	memLink.h \
@@ -224,7 +230,7 @@ nobase_sst_HEADERS = \
 	memTypes.h
 
 libmemHierarchy_la_LDFLAGS = -module -avoid-version
-libmemHierarchy_la_LIBADD = 
+libmemHierarchy_la_LIBADD =
 
 if HAVE_RAMULATOR
 libmemHierarchy_la_LDFLAGS += $(RAMULATOR_LDFLAGS)
@@ -309,4 +315,6 @@ install-exec-hook:
 	$(SST_REGISTER_TOOL) FDSIM LIBDIR=$(FDSIM_LIBDIR)
 	$(SST_REGISTER_TOOL) GOBLIN_HMCSIM LIBDIR=$(GOBLIN_HMCSIM_LIBDIR)
 	$(SST_REGISTER_TOOL) RAMULATOR LIBDIR=$(RAMULATOR_LIBDIR)
+	$(SST_REGISTER_TOOL) SST_ELEMENT_SOURCE     memHierarchy=$(abs_srcdir)
+	$(SST_REGISTER_TOOL) SST_ELEMENT_TESTS      memHierarchy=$(abs_srcdir)/tests
 

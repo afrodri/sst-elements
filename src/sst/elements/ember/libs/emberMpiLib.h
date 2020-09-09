@@ -1,8 +1,8 @@
-// Copyright 2009-2018 NTESS. Under the terms
+// Copyright 2009-2020 NTESS. Under the terms
 
 // Government retains certain rights in this software.
 //
-// Copyright (c) 2009-2018, NTESS
+// Copyright (c) 2009-2020, NTESS
 // All rights reserved.
 //
 // Portions are copyright of other developers:
@@ -28,6 +28,8 @@
 #include "mpi/emberfinalizeev.h"
 #include "mpi/emberalltoallvev.h"
 #include "mpi/emberalltoallev.h"
+#include "mpi/emberallgatherev.h"
+#include "mpi/emberallgathervev.h"
 #include "mpi/emberbarrierev.h"
 #include "mpi/emberrankev.h"
 #include "mpi/embersizeev.h"
@@ -46,6 +48,8 @@
 #include "mpi/emberCommDestroyEv.h"
 #include "mpi/emberallredev.h"
 #include "mpi/emberbcastev.h"
+#include "mpi/emberscatterev.h"
+#include "mpi/emberscattervev.h"
 #include "mpi/emberredev.h"
 
 using namespace Hermes;
@@ -75,6 +79,8 @@ namespace Ember {
     NAME( Allreduce ) \
     NAME( Reduce ) \
     NAME( Bcast) \
+    NAME( Scatter) \
+    NAME( Scatterv) \
     NAME( Gettime ) \
     NAME( Commsplit ) \
     NAME( Commcreate ) \
@@ -109,7 +115,7 @@ class EmberMpiLib : public EmberLib {
     enum Events {
         FOREACH_ENUM(GENERATE_ENUM)
     };
-  
+
   public:
 
     SST_ELI_REGISTER_MODULE(
@@ -157,7 +163,7 @@ class EmberMpiLib : public EmberLib {
 
 		if ( m_spyplotMode > EMBER_SPYPLOT_NONE ) {
 			updateSpyplot( dest, bytes );
-		}				
+		}
 	}
     void isend( Queue& q, const Hermes::MemAddr& payload, uint32_t count, PayloadDataType dtype, RankID dest, uint32_t tag, Communicator group,
         MessageRequest* req ) {
@@ -173,7 +179,7 @@ class EmberMpiLib : public EmberLib {
 	}
 
     void recv(Queue& q, const Hermes::MemAddr& payload, uint32_t count, PayloadDataType dtype, RankID src, uint32_t tag, Communicator group,
-		   	MessageResponse* resp = NULL ) 
+		   	MessageResponse* resp = NULL )
 	{
 		q.push( new EmberRecvEvent( api(), m_output, m_Stats[Recv], payload, count, dtype, src, tag, group, resp ) );
 	}
@@ -214,7 +220,7 @@ class EmberMpiLib : public EmberLib {
 	}
     void commDestroy( Queue& q, Communicator comm ) {
 		q.push( new EmberCommDestroyEvent( api(), m_output, m_Stats[Commsplit], comm ) );
-	}	
+	}
 
     void allreduce( Queue& q, const Hermes::MemAddr& mydata, const Hermes::MemAddr& result, uint32_t count,
                 PayloadDataType dtype, ReductionOperation op, Communicator group ) {
@@ -227,18 +233,42 @@ class EmberMpiLib : public EmberLib {
 	}
 
     void bcast( Queue& q, const Hermes::MemAddr& mydata, uint32_t count, PayloadDataType dtype, int root, Communicator group ) {
-		q.push( new EmberBcastEvent( api(), m_output, m_Stats[Reduce], mydata, count, dtype, root, group ) );
+		q.push( new EmberBcastEvent( api(), m_output, m_Stats[Bcast], mydata, count, dtype, root, group ) );
 	}
 
+    void scatter( Queue& q, const Hermes::MemAddr& senddata, uint32_t sendCnt, PayloadDataType sendType,
+			const Hermes::MemAddr& recvdata, uint32_t recvCnt, PayloadDataType recvType, int root, Communicator group ) {
+		q.push( new EmberScatterEvent( api(), m_output, m_Stats[Scatter], senddata, sendCnt, sendType, recvdata, recvCnt, recvType, root, group ) );
+	}
+
+    void scatterv( Queue& q, const Hermes::MemAddr& senddata, int* sendCnts, int* displs, PayloadDataType sendType,
+			const Hermes::MemAddr& recvdata, uint32_t recvCnt, PayloadDataType recvType, int root, Communicator group ) {
+		q.push( new EmberScattervEvent( api(), m_output, m_Stats[Scatterv], senddata, sendCnts, displs, sendType, recvdata, recvCnt, recvType, root, group ) );
+	}
+
+    void allgather( Queue& q, const Hermes::MemAddr& sendData, int sendCnts, PayloadDataType senddtype,
+        const Hermes::MemAddr& recvData, int recvCnts, PayloadDataType recvdtype, Communicator group )
+	{
+		q.push( new EmberAllgatherEvent( api(), m_output, m_Stats[Alltoall], sendData, sendCnts, senddtype, recvData, recvCnts, recvdtype, group ) );
+	}
+
+    void allgatherv( Queue& q, const Hermes::MemAddr& sendData, int sendCnts, PayloadDataType senddtype,
+        const Hermes::MemAddr& recvData, Addr recvCnts, Addr recvDsp, PayloadDataType recvdtype, Communicator group )
+	{
+		q.push( new EmberAllgathervEvent( api(), m_output, m_Stats[Alltoallv],
+			sendData, sendCnts, senddtype,
+			recvData, recvCnts, recvDsp, recvdtype,
+			group ) );
+	}
 
     void alltoall( Queue& q, const Hermes::MemAddr& sendData, int sendCnts, PayloadDataType senddtype,
-        const Hermes::MemAddr& recvData, int recvCnts, PayloadDataType recvdtype, Communicator group ) 
+        const Hermes::MemAddr& recvData, int recvCnts, PayloadDataType recvdtype, Communicator group )
 	{
 		q.push( new EmberAlltoallEvent( api(), m_output, m_Stats[Alltoall], sendData, sendCnts, senddtype, recvData, recvCnts, recvdtype, group ) );
 	}
 
     void alltoallv( Queue& q, const Hermes::MemAddr& sendData, Addr sendCnts, Addr sendDsp, PayloadDataType senddtype,
-        const Hermes::MemAddr& recvData, Addr recvCnts, Addr recvDsp, PayloadDataType recvdtype, Communicator group ) 
+        const Hermes::MemAddr& recvData, Addr recvCnts, Addr recvDsp, PayloadDataType recvdtype, Communicator group )
 	{
     	q.push( new EmberAlltoallvEvent( api(), m_output, m_Stats[Alltoallv],
 			sendData, sendCnts, sendDsp, senddtype,
@@ -251,7 +281,7 @@ class EmberMpiLib : public EmberLib {
             RankID dest, uint32_t sendtag,
             Addr recvbuf, uint32_t recvcnt, PayloadDataType recvtype,
             RankID source, uint32_t recvtag,
-            Communicator group, MessageResponse* resp ) 
+            Communicator group, MessageResponse* resp )
 	{
     	MessageRequest* req = new MessageRequest;
     	irecv(q, recvbuf, recvcnt, recvtype, source, recvtag, group, req );
@@ -265,7 +295,7 @@ class EmberMpiLib : public EmberLib {
     	allreduce( q, mydata, result, count, dtype, op, group );
 	}
     void reduce( Queue& q, Addr _mydata, Addr _result, uint32_t count, PayloadDataType dtype, ReductionOperation op,
-                int root, Communicator group ) 
+                int root, Communicator group )
 	{
 		Hermes::MemAddr mydata( memAddr( _mydata ) );
 		Hermes::MemAddr result( memAddr( _result ) );
@@ -278,7 +308,7 @@ class EmberMpiLib : public EmberLib {
 	}
 
 	void alltoall( Queue& q, Addr _sendData, int sendCnts, PayloadDataType senddtype,
-        Addr _recvData, int recvCnts, PayloadDataType recvdtype, Communicator group ) 
+        Addr _recvData, int recvCnts, PayloadDataType recvdtype, Communicator group )
 	{
 		Hermes::MemAddr sendData( memAddr( _sendData ) );
 		Hermes::MemAddr recvData( memAddr( _recvData ) );
@@ -286,7 +316,7 @@ class EmberMpiLib : public EmberLib {
 	}
 
     void alltoallv( Queue& q, Addr _sendData, Addr sendCnts, Addr sendDsp, PayloadDataType senddtype,
-        Addr _recvData, Addr recvCnts, Addr recvDsp, PayloadDataType recvdtype, Communicator group ) 
+        Addr _recvData, Addr recvCnts, Addr recvDsp, PayloadDataType recvdtype, Communicator group )
 	{
 		Hermes::MemAddr sendData( memAddr( _sendData ) );
 		Hermes::MemAddr recvData( memAddr( _recvData ) );
@@ -330,16 +360,16 @@ class EmberMpiLib : public EmberLib {
 
 	void  setSizeCache( int size ) {
 		m_size = size;
-	}	
+	}
 	int  getSizeCache() {
 		return m_size;
-	}	
+	}
 	void  setRankCache(int rank ) {
 		m_rank = rank;
-	}	
+	}
 	int  getRankCache() {
 		return m_rank;
-	}	
+	}
 	void setBacked() {
 		m_backed = true;
 	}
@@ -351,7 +381,7 @@ class EmberMpiLib : public EmberLib {
         return  m_backed ? addr : NULL;
     }
 
-	MP::Interface& api() { return *static_cast<MP::Interface*>(m_api); } 
+	MP::Interface& api() { return *static_cast<MP::Interface*>(m_api); }
 	std::vector< Statistic<uint32_t>* > m_Stats;
 	static const char*  m_eventName[];
 

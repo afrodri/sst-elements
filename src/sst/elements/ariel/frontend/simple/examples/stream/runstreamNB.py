@@ -4,10 +4,10 @@ import os
 sst.setProgramOption("timebase", "1ps")
 
 sst_root = os.getenv( "SST_ROOT" )
+app = sst_root + "/sst-elements/src/sst/elements/ariel/frontend/simple/examples/stream/stream"
 
-l2PrefetchParams = {
-        "prefetcher": "cassini.NextBlockPrefetcher"
-        }
+if not os.path.exists(app):
+    app = os.getenv( "OMP_EXE" )
 
 ariel = sst.Component("a0", "ariel.ariel")
 ariel.addParams({
@@ -15,7 +15,7 @@ ariel.addParams({
         "maxcorequeue" : "256",
         "maxissuepercycle" : "2",
         "pipetimeout" : "0",
-        "executable" : sst_root + "/sst-elements/src/sst/elements/ariel/frontend/simple/examples/stream/stream",
+        "executable" : app,
         "arielmode" : "1",
         "launchparamcount" : 1,
         "launchparam0" : "-ifeellucky",
@@ -36,24 +36,23 @@ l1cache.addParams({
         "cache_line_size" : "64",
         "L1" : "1",
         "debug" : "0",
-	})
+})
 
-memory = sst.Component("memory", "memHierarchy.MemController")
-memory.addParams({
-        "coherence_protocol" : "MSI",
-        "backend.access_time" : "10ns",
-        "backend.mem_size" : "2048MiB",
+memctrl = sst.Component("memory", "memHierarchy.MemController")
+memctrl.addParams({
         "clock" : "1GHz",
-        "use_dramsim" : "0",
-        "device_ini" : "DDR3_micron_32M_8B_x4_sg125.ini",
-        "system_ini" : "system.ini"
-        })
+})
 
+memory = memctrl.setSubComponent("backend", "memHierarchy.simpleMem")
+memory.addParams({
+        "access_time" : "10ns",
+        "mem_size" : "2048MiB",
+})
 cpu_cache_link = sst.Link("cpu_cache_link")
 cpu_cache_link.connect( (ariel, "cache_link_0", "50ps"), (l1cache, "high_network_0", "50ps") )
 
 memory_link = sst.Link("mem_bus_link")
-memory_link.connect( (l1cache, "low_network_0", "50ps"), (memory, "direct_link", "50ps") )
+memory_link.connect( (l1cache, "low_network_0", "50ps"), (memctrl, "direct_link", "50ps") )
 
 # Set the Statistic Load Level; Statistics with Enable Levels (set in
 # elementInfoStatistic) lower or equal to the load can be enabled (default = 0)

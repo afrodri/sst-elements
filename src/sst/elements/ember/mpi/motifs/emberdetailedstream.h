@@ -1,8 +1,8 @@
-// Copyright 2009-2019 NTESS. Under the terms
+// Copyright 2009-2020 NTESS. Under the terms
 // of Contract DE-NA0003525 with NTESS, the U.S.
 // Government retains certain rights in this software.
 //
-// Copyright (c) 2009-2019, NTESS
+// Copyright (c) 2009-2020, NTESS
 // All rights reserved.
 //
 // Portions are copyright of other developers:
@@ -25,13 +25,13 @@ namespace Ember {
 class EmberDetailedStreamGenerator : public EmberMessagePassingGenerator {
 
 public:
-    SST_ELI_REGISTER_SUBCOMPONENT(
+    SST_ELI_REGISTER_SUBCOMPONENT_DERIVED(
         EmberDetailedStreamGenerator,
         "ember",
         "DetailedStreamMotif",
         SST_ELI_ELEMENT_VERSION(1,0,0),
         "Performs a Stream Motif with detailed model",
-        "SST::Ember::EmberGenerator"
+        SST::Ember::EmberGenerator
     )
 
     SST_ELI_DOCUMENT_PARAMS(
@@ -62,16 +62,16 @@ public:
     )
 
 public:
-	EmberDetailedStreamGenerator(SST::Component* owner, Params& params);
+	EmberDetailedStreamGenerator(SST::ComponentId_t, Params& params);
     bool generate( std::queue<EmberEvent*>& evQ);
-	std::string getComputeModelName(); 
+	std::string getComputeModelName();
 
 private:
 	//enum Bench { COPY, TRIAD, NUM_BENCH }  m_bench;
     void computeDetailedCopy( std::queue<EmberEvent*>& evQ);
     void computeDetailedTriad( std::queue<EmberEvent*>& evQ);
 	void print();
-    
+
 	uint32_t m_numLoops;
 	uint32_t m_loopIndex;
 

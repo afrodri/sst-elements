@@ -1,8 +1,8 @@
-// Copyright 2009-2019 NTESS. Under the terms
+// Copyright 2009-2020 NTESS. Under the terms
 // of Contract DE-NA0003525 with NTESS, the U.S.
 // Government retains certain rights in this software.
 //
-// Copyright (c) 2009-2019, NTESS
+// Copyright (c) 2009-2020, NTESS
 // All rights reserved.
 //
 // Portions are copyright of other developers:
@@ -75,7 +75,8 @@ public:
      		{ "memoryinterface",  "Sets the memory interface module to use", "memHierarchy.memInterface" },
      		{ "pagecount", "Sets the number of pages the system can allocate", "4194304" },
      		{ "pagesize", "Sets the size of the page in the system, MUST be a multiple of cache_line_size", "4096" },
-     		{ "pagemap", "Mapping scheme, string set to LINEAR or RANDOMIZED, default is LINEAR (virtual==physical), RANDOMIZED randomly shuffles virtual to physical map.", "LINEAR" }
+     		{ "pagemap", "Mapping scheme, string set to LINEAR or RANDOMIZED, default is LINEAR (virtual==physical), RANDOMIZED randomly shuffles virtual to physical map.", "LINEAR" },
+                { "pagemapname", "Name of the shared memory region to keep page mapping in", "miranda"},
     	)
 
 	SST_ELI_DOCUMENT_STATISTICS(
@@ -129,10 +130,12 @@ private:
 	std::map<SimpleMem::Request::id_t, CPURequest*> requestsInFlight;
 	SimpleMem* cache_link;
 	Link* srcLink;
-	MirandaReqEvent* srcReqEvent;	
+	MirandaReqEvent* srcReqEvent;
 
 	MirandaRequestQueue<GeneratorRequest*> pendingRequests;
 	MirandaMemoryManager* memMgr;
+
+        SharedRegion * addrMap;
 
         uint32_t maxRequestsPending[OPCOUNT];
 	uint32_t requestsPending[OPCOUNT];

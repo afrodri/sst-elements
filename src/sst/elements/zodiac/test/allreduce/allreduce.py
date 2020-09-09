@@ -20,7 +20,7 @@ def main():
     try:
         opts, args = getopt.getopt(sys.argv[1:], "", ["msgSize=","iter=","shape=","numCores="])
     except getopt.GetopError as err:
-        print str(err)
+        print (str(err))
         sys.exit(2)
     for o, a in opts:
         if o in ("--iter"):
@@ -61,8 +61,8 @@ numDim = calcNumDim( shape )
 width = calcWidth( shape )
 numRanks = numNodes * num_vNics
 
-print numNodes
-print numRanks
+print (numNodes)
+print (numRanks)
 
 sst.merlin._params["link_lat"] = "40ns"
 sst.merlin._params["link_bw"] = "4GB/s"
@@ -149,29 +149,53 @@ class EmberEP(EndPoint):
 	def prepParams(self):
 		pass
 	def build(self, nodeID, extraKeys):
+
 		num_vNics = int(nicParams["num_vNics"])
 		nic = sst.Component("nic" + str(nodeID), "firefly.nic")
 		nic.addParams(nicParams)
 		nic.addParam("nid", nodeID)
 
+		rtrLink = nic.setSubComponent( "rtrLink", "merlin.linkcontrol" )
+		rtrLink.addParams( nicParams )
+
+		retval = (rtrLink, "rtr_port", sst.merlin._params["link_lat"] )
+
 		loopBack = sst.Component("loopBack" + str(nodeID), "firefly.loopBack")
 		loopBack.addParam("numCores", num_vNics)
 
-		for x in xrange(num_vNics ):
+		for x in range(num_vNics ):
 			ep = sst.Component("nic" + str(nodeID) + "core" + str(x) + "_TraceReader", "zodiac.ZodiacSiriusTraceReader")
 			ep.addParams(driverParams)
-			ep.addParam('hermesParams.netId', nodeID )
-			ep.addParam('hermesParams.netMapSize', numRanks )
-			ep.addParam('hermesParams.netMapName', "NetMap" )
+			os = ep.setSubComponent( "OS", "firefly.hades" )
+			for key, value in driverParams.items():
+				if key.startswith("hermesParams."):
+					key = key[key.find('.')+1:]
+					os.addParam( key,value)
+
+			virtNic = os.setSubComponent( "virtNic", "firefly.VirtNic" )
+			proto = os.setSubComponent( "proto", "firefly.CtrlMsgProto" )
+			process = proto.setSubComponent( "process", "firefly.ctrlMsg" )
+
+			os.addParam('netId', nodeID )
+			os.addParam('netMapSize', numRanks )
+			os.addParam('netMapName', "NetMap" )
+
+			prefix = "hermesParams.ctrlMsg."
+			for key, value in driverParams.items():
+				if key.startswith(prefix):
+					key = key[len(prefix):]
+					proto.addParam( key,value)
+					process.addParam( key,value)
             
 			nicLink = sst.Link( "nic" + str(nodeID) + "core" + str(x) + "_Link"  )
-			loopLink = sst.Link( "loop" + str(nodeID) + "core" + str(x) + "_Link"  )
-			ep.addLink(nicLink, "nic", "150ns")
-			nic.addLink(nicLink, "core" + str(x), "150ns")
+
+			loopLink = sst.Link( "loop" + str(nodeID) + "nic0core" + str(x) + "_Link"  )
+
+			nicLink.connect( (virtNic,'nic','1ns' ),(nic,'core'+str(x),'150ns'))
             
-			ep.addLink(loopLink, "loop", "1ns")
-			loopBack.addLink(loopLink, "core" + str(x), "1ns")
-		return (nic, "rtr", "10ns")
+			loopLink.connect( (process,'loop','1ns' ),(loopBack,'nic0core'+str(x),'1ns'))
+
+		return retval
 
 
 topo = topoTorus()

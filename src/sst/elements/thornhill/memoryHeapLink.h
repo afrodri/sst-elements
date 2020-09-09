@@ -1,8 +1,8 @@
-// Copyright 2009-2019 NTESS. Under the terms
+// Copyright 2009-2020 NTESS. Under the terms
 // of Contract DE-NA0003525 with NTESS, the U.S.
 // Government retains certain rights in this software.
 //
-// Copyright (c) 2009-2019, NTESS
+// Copyright (c) 2009-2020, NTESS
 // All rights reserved.
 //
 // Portions are copyright of other developers:
@@ -28,28 +28,28 @@ namespace Thornhill {
 class MemoryHeapLink : public SubComponent {
 
   public:
-    SST_ELI_REGISTER_SUBCOMPONENT(
+    SST_ELI_REGISTER_SUBCOMPONENT_API(SST::Thornhill::MemoryHeapLink)
+    SST_ELI_REGISTER_SUBCOMPONENT_DERIVED(
         MemoryHeapLink,
         "thornhill",
         "MemoryHeapLink",
         SST_ELI_ELEMENT_VERSION(1,0,0),
         "",
-        ""
+		SST::Thornhill::MemoryHeapLink
     )
 
 	struct Entry {
 		Entry( std::function<void(uint64_t)> _fini ) : fini( _fini ) {}
-		std::function<void(uint64_t)> fini; 
+		std::function<void(uint64_t)> fini;
 	};
 
   public:
-    MemoryHeapLink( Component* owner, Params& params, 
-                                            std::string name ="" ) :
-		SubComponent(owner )
+    MemoryHeapLink( ComponentId_t id, Params& params ) : SubComponent(id)
 	{
 		m_link = configureLink( "memoryHeap", "0ps",
             new Event::Handler<MemoryHeapLink>(
-                    this,&MemoryHeapLink::eventHandler ) );	
+                    this,&MemoryHeapLink::eventHandler ) );
+        assert(m_link);
 	}
 
     bool isConnected() {
@@ -64,7 +64,7 @@ class MemoryHeapLink : public SubComponent {
 		event->type = MemoryHeapEvent::Alloc;
 		event->length = length;
 
-		m_link->send(0, event );	
+		m_link->send(0, event );
 	}
 
 	void free( SimVAddr addr, std::function<void(uint64_t)> fini ) {
@@ -75,7 +75,7 @@ class MemoryHeapLink : public SubComponent {
 		event->type = MemoryHeapEvent::Free;
 		event->addr = addr;
 
-		m_link->send(0, event );	
+		m_link->send(0, event );
 	}
 
     ~MemoryHeapLink(){};

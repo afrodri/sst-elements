@@ -42,6 +42,8 @@ libember_la_SOURCES = \
 	libs/miscEvents/emberMiscEvent.h \
 	libs/emberMpiLib.h \
 	libs/emberMpiLib.cc \
+	libs/mpi/emberscatterev.h \
+	libs/mpi/emberscattervev.h \
 	libs/mpi/embercancelev.h \
 	libs/mpi/emberrecvev.h \
 	libs/mpi/embersendev.h \
@@ -58,6 +60,8 @@ libember_la_SOURCES = \
 	libs/mpi/emberallredev.h \
 	libs/mpi/emberalltoallvev.h \
 	libs/mpi/emberalltoallev.h \
+	libs/mpi/emberallgathervev.h \
+	libs/mpi/emberallgatherev.h \
 	libs/mpi/emberredev.h \
 	libs/mpi/emberbcastev.h \
 	libs/mpi/emberMPIEvent.h \
@@ -112,6 +116,10 @@ libember_la_SOURCES = \
 	mpi/motifs/emberallpingpong.h \
 	mpi/motifs/emberallreduce.cc \
 	mpi/motifs/emberallreduce.h \
+	mpi/motifs/emberallgatherv.cc \
+	mpi/motifs/emberallgatherv.h \
+	mpi/motifs/emberallgather.cc \
+	mpi/motifs/emberallgather.h \
 	mpi/motifs/emberalltoall.cc \
 	mpi/motifs/emberalltoall.h \
 	mpi/motifs/emberalltoallv.cc \
@@ -119,6 +127,10 @@ libember_la_SOURCES = \
 	mpi/motifs/emberreduce.cc \
 	mpi/motifs/emberbcast.h \
 	mpi/motifs/emberbcast.cc \
+	mpi/motifs/emberscatter.h \
+	mpi/motifs/emberscatter.cc \
+	mpi/motifs/emberscatterv.h \
+	mpi/motifs/emberscatterv.cc \
 	mpi/motifs/emberreduce.h \
 	mpi/motifs/emberhalo3d.h \
 	mpi/motifs/emberhalo3d.cc \
@@ -128,6 +140,8 @@ libember_la_SOURCES = \
 	mpi/motifs/emberhalo3dsv.cc \
 	mpi/motifs/emberhalo3d26.h \
 	mpi/motifs/emberhalo3d26.cc \
+	mpi/motifs/emberincast.h \
+	mpi/motifs/emberincast.cc \
 	mpi/motifs/embersweep3d.h \
 	mpi/motifs/embersweep3d.cc \
 	mpi/motifs/embernaslu.h \
@@ -228,7 +242,8 @@ libember_la_SOURCES = \
 	shmem/motifs/emberShmemFAM_Gatherv.h \
 	shmem/motifs/emberShmemFAM_AtomicInc.h \
 	shmem/motifs/emberShmemFAM_Cswap.h \
-	sirius/include/sirius/siriusglobals.h
+	sirius/include/sirius/siriusglobals.h \
+	pyember.py
 
 
 bin_PROGRAMS = sst-spygen sst-meshconvert
@@ -265,7 +280,16 @@ EXTRA_DIST = \
 	test/chamaOpenIBParams.py \
 	test/chamaPSMParams.py \
 	test/bgqParams.py \
-	test/runFAMloadfile
+	test/runFAMloadfile \
+	test/generateNidListQOS.py \
+	test/generateNidListRange.py \
+	test/generateNidListGroup.py \
+	test/generateNidListInterval.py \
+	test/generateNidListRandom.py \
+	tests/qos-dragonfly.sh \
+	tests/qos-fattree.sh \
+	tests/qos-hyperx.sh \
+	tests/qos.load
 
 if USE_EMBER_CONTEXTS
 libember_la_SOURCES += \
@@ -283,4 +307,24 @@ libember_la_LIBADD = \
 	$(OTF2_LIBS)
 
 endif
+
+install-exec-hook:
+	$(SST_REGISTER_TOOL) SST_ELEMENT_SOURCE     ember=$(abs_srcdir)
+	$(SST_REGISTER_TOOL) SST_ELEMENT_TESTS      ember=$(abs_srcdir)/tests
+
+BUILT_SOURCES = \
+	pyember.inc
+
+# This sed script converts 'od' output to a comma-separated list of byte-
+# values, suitable for #include'ing into an array definition.
+# This can be done much more simply with xxd or hexdump, but those tools
+# are not installed by default on all supported platforms.
+#
+# od:	-v:		Print all data
+#		-t x1:	Print as byte-values, in hex
+# sed:	Script 1:  Remove base-address column from od output
+# 		Script 2:  Remove trailing blank line resulting from script 1
+# 		Script 3:  Add '0x' prefix, and ',' suffix to each value
+%.inc: %.py
+	od -v -t x1 < $< | sed -e 's/^[^ ]*[ ]*//g' -e '/^\s*$$/d' -e 's/\([0-9a-f]*\)[ $$]*/0x\1,/g' > $@
 

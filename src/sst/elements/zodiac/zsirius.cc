@@ -1,8 +1,8 @@
-// Copyright 2009-2019 NTESS. Under the terms
+// Copyright 2009-2020 NTESS. Under the terms
 // of Contract DE-NA0003525 with NTESS, the U.S.
 // Government retains certain rights in this software.
 //
-// Copyright (c) 2009-2019, NTESS
+// Copyright (c) 2009-2020, NTESS
 // All rights reserved.
 //
 // Portions are copyright of other developers:
@@ -46,16 +46,14 @@ ZodiacSiriusTraceReader::ZodiacSiriusTraceReader(ComponentId_t id, Params& param
 
    	Params hermesParams = params.find_prefix_params("hermesParams." );
 
-    os = dynamic_cast<OS*>(loadSubComponent(
-                            osModule, this, hermesParams));
+    os = loadUserSubComponent<OS>( "OS" );
     assert(os);
 
     params.print_all_params(std::cout);
     Params osParams = params.find_prefix_params("os.");
     std::string osName = osParams.find<std::string>("name");
     Params modParams = params.find_prefix_params( osName + "." );
-    msgapi = dynamic_cast<MP::Interface*>(loadSubComponent(
-                            "firefly.hadesMP", this, modParams));
+    msgapi = loadAnonymousSubComponent<MP::Interface>( "firefly.hadesMP", "", 0, ComponentInfo::SHARE_NONE, modParams );
     assert(msgapi);
 
     msgapi->setOS( os );
@@ -74,7 +72,7 @@ ZodiacSiriusTraceReader::ZodiacSiriusTraceReader(ComponentId_t id, Params& param
     verbosityLevel = params.find("verbose", 0);
     std::cout << "Set verbosity level to " << verbosityLevel << std::endl;
 
-    selfLink = configureSelfLink("Self", "1ns", 
+    selfLink = configureSelfLink("Self", "1ns",
 	new Event::Handler<ZodiacSiriusTraceReader>(this, &ZodiacSiriusTraceReader::handleSelfEvent));
 
     tConv = Simulation::getSimulation()->getTimeLord()->getTimeConverter("1ns");
