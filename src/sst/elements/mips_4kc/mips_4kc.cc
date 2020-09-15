@@ -180,7 +180,9 @@ bool MIPS4KC::clockTic( Cycle_t c)
         printf("CYCLE %llu: %llu.%u\n", c, pipeCycle, isFalling);
     } else {
         if ((pipeCycle & 0x1fff) == 1 && isFalling) {
-            printf("CYCLE %llu: %llu.%u\n", c, pipeCycle, isFalling);
+            //printf("CYCLE %llu: %llu.%u\n", c, pipeCycle, isFalling);
+            out.output(CALL_INFO,"CYCLE %llu: %llu.%u\n", c, pipeCycle,
+                       isFalling);
         }
     }
 
