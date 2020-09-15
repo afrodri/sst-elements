@@ -32,7 +32,7 @@ using namespace SST::MIPS4KCComponent;
 
 #define MAX_EXCPTS 13
 #define sig_mesg(a,mesg)						\
-    write_output (message_out, "\n%s (signal %d) %s @ %lld", DESC(a), a, mesg, reg_word::getNow())
+    write_output (message_out, "\n%s (signal %d @ %lld) %s", DESC(a), a, reg_word::getNow(), mesg)
 
 /* Exported Variables: */
 
