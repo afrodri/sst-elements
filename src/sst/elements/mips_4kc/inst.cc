@@ -24,6 +24,7 @@
 
 #include <sst_config.h>
 #include "mips_4kc.h"
+#include <algorithm>
 
 /*#include <stdio.h>
 #include <string.h>
@@ -57,7 +58,7 @@ static vector<inst_info> name_tbl = {
 /* Sort the opcode table on their key (the opcode value). */
 void MIPS4KC::sort_name_table (void)
 {
-    sort(name_tbl.begin(), name_tbl.end(), [](inst_info &a, inst_info &b){return a.value1 < b.value1;});
+  std::sort(name_tbl.begin(), name_tbl.end(), [](inst_info &a, inst_info &b){return a.value1 < b.value1;});
 
   sorted_name_table = 1;
 }
