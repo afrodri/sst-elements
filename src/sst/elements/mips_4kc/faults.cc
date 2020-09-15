@@ -45,15 +45,17 @@ MDU Event 4 0xffffffff
 /* To add new fault
 
 faults.h
-   ~44 
+   ~51 
    convenience func
 faults.cc
    ~71 (parse map)
    ~114(Genf time)
    check_for_fault
+   convenience func
    printStats
 reg.h
    ~74
+cycle-cl or as needed
  */
 
 
@@ -81,7 +83,8 @@ const std::map<std::string, faultChecker_t::location_idx_t> faultChecker_t::pars
     {"INST_ADDR",INST_ADDR_FAULT_IDX},
     {"INST_TYPE",INST_TYPE_FAULT_IDX},
     {"WB_ADDR",WB_ADDR_FAULT_IDX},
-    {"MEM_PRE_DATA", MEM_PRE_DATA_FAULT_IDX}
+    {"MEM_PRE_DATA", MEM_PRE_DATA_FAULT_IDX},
+    {"PC", PC_FAULT_IDX}
 };
 
 void faultChecker_t::init(faultTrack::location_t loc, uint64_t period,
@@ -131,6 +134,7 @@ void faultChecker_t::init(faultTrack::location_t loc, uint64_t period,
     GEN_F_TIME(INST_TYPE_FAULT);
     GEN_F_TIME(WB_ADDR_FAULT);
     GEN_F_TIME(MEM_PRE_DATA_FAULT);
+    GEN_F_TIME(PC_FAULT);
 
 #undef GEN_F_TIME
 
@@ -366,7 +370,8 @@ bool faultChecker_t::checkForFault(faultTrack::location_t loc, uint32_t &faulted
         STD_F_CASE(CONTROL_FAULT); 
         STD_F_CASE(INST_ADDR_FAULT);
         STD_F_CASE(INST_TYPE_FAULT);
-        STD_F_CASE(WB_ADDR_FAULT); 
+        STD_F_CASE(WB_ADDR_FAULT);
+        STD_F_CASE(PC_FAULT); 
 
 #undef STD_F_CASE
 
@@ -562,6 +567,14 @@ void faultChecker_t::checkAndInject_WB_ADDR_FAULT(reg_word (&R)[32],
     }
 }
 
+void faultChecker_t::checkAndInject_PC_FAULT(reg_word &pc) {
+    uint32_t flippedBits = 0;
+    if(checkForFault(PC_FAULT, flippedBits)) {
+        printf("INJECTING PC Fault @ %lld\n", reg_word::getNow());
+        pc.addFault(getFault(PC_FAULT, flippedBits));
+    }
+}
+
 void faultChecker_t::printStats() {
     printf("Faultable Events:\n");
 
@@ -580,6 +593,7 @@ void faultChecker_t::printStats() {
     PF(INST_TYPE_FAULT);
     PF(WB_ADDR_FAULT);
     PF(MEM_PRE_DATA_FAULT);
+    PF(PC_FAULT);
 
 #undef PF
 

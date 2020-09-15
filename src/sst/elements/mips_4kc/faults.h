@@ -49,6 +49,7 @@ namespace MIPS4KCComponent {
             INST_TYPE_FAULT_IDX,
             WB_ADDR_FAULT_IDX,
             MEM_PRE_DATA_FAULT_IDX,
+            PC_FAULT_IDX, 
             LAST_FAULT_IDX
         } location_idx_t; 
         static const std::map<std::string, location_idx_t> parseMap;
@@ -131,6 +132,7 @@ namespace MIPS4KCComponent {
         void checkAndInject_INST_ADDR_FAULT(reg_word &data);
         void checkAndInject_INST_TYPE_FAULT(pipe_stage *ps);
         void checkAndInject_WB_ADDR_FAULT(reg_word (&R)[32], uint idx, const reg_word &value);
+        void checkAndInject_PC_FAULT(reg_word &data);
 
         void printStats();
     };

@@ -93,6 +93,7 @@ namespace faultTrack {
         WB_ADDR_FAULT = 0x800, // writeback correct data to wrong register
         MEM_PRE_DATA_FAULT = 0x1000, // Memory Stage "pre": at a random
                                      // load/store, flip a  bit(s) in the data
+        PC_FAULT = 0x2000 // corrupt the program counter
     } location_t; 
 }
 
@@ -239,8 +240,8 @@ public:
 
     static void countINSTFaults(const reg_word &pc, const bool instF) {
         // If the pc.data is corrupted, it was loaded from the wrong
-        // location (INST_ADDR_FAULT). If the instF is true, then the
-        // decode was corrupted (INST_TYPE_FAULT)
+        // location (INST_ADDR_FAULT, PC_FAULT). If the instF is true,
+        // then the decode was corrupted (INST_TYPE_FAULT)
         if (pc.data != pc.origData || instF) {
             faultStats[faultTrack::INST_ERROR]++;
         }

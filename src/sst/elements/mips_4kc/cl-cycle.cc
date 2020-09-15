@@ -174,9 +174,10 @@ void MIPS4KC::cl_run_rising () {
 
 int MIPS4KC::cl_run_falling (reg_word addr, int display)
 {
-    // check for register file faults
+    // check for register file & PC faults
     faultChecker.checkAndInject_RF(R);
-
+    faultChecker.checkAndInject_PC_FAULT(addr);
+    
     PC = addr;
     cycle_running = 1;
 

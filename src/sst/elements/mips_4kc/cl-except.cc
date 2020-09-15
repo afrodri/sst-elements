@@ -32,7 +32,7 @@ using namespace SST::MIPS4KCComponent;
 
 #define MAX_EXCPTS 13
 #define sig_mesg(a,mesg)						\
-  write_output (message_out, "\n%s (signal %d) %s", DESC(a), a, mesg)
+    write_output (message_out, "\n%s (signal %d) %s @ %lld", DESC(a), a, mesg, reg_word::getNow())
 
 /* Exported Variables: */
 
@@ -228,7 +228,8 @@ int MIPS4KC::process_excpt (void)
 
     default:
       write_output (message_out,
-		    "Unknown exception: %x\n", (excpt_code));
+		    "Unknown exception: %x @ %lld\n", (excpt_code),
+                    reg_word::getNow());
       return (-1);
     }
 
