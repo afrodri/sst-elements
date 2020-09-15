@@ -24,6 +24,7 @@ AC_DEFUN([SST_CHECK_LIBELF], [
 
   AC_LANG_PUSH(C++)
   AC_CHECK_HEADERS([libelf.h], [], [sst_check_libelf_happy="no"])
+  AC_CHECK_HEADERS([libelf/libelf.h], [], [sst_check_libelf_happy="no"])
   AC_CHECK_LIB([elf], [elf_version],
     [LIBELF_LIB="-lelf"], [sst_check_libelf_happy="no"])
   AC_LANG_POP(C++)

@@ -24,11 +24,20 @@
 
 
 #include <sst_config.h>
+#include <sst_element_config.h>
 #include <sys/stat.h> 
 #include <fcntl.h>
 #include <unistd.h>
-//#include <libelf/gelf.h>
+
+#ifdef HAVE_LIBELF_H
 #include <gelf.h>
+#elif (HAVE_LIBELF_LIBELF_H == 1)
+// Macports installs in an odd place
+#include <libelf/gelf.h>
+#else
+#error "No libelf headers found"
+#endif
+
 #include "mips_4kc.h"
 
 using namespace SST;
