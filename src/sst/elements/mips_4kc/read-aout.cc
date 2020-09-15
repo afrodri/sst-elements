@@ -27,7 +27,8 @@
 #include <sys/stat.h> 
 #include <fcntl.h>
 #include <unistd.h>
-#include <libelf/gelf.h>
+//#include <libelf/gelf.h>
+#include <gelf.h>
 #include "mips_4kc.h"
 
 using namespace SST;

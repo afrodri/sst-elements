@@ -60,6 +60,7 @@ cycle-cl or as needed
 
 
 #include <sst_config.h>
+#include <algorithm>
 #include "faults.h"
 #include <fstream>
 #include <sst/core/rng/mersenne.h>
