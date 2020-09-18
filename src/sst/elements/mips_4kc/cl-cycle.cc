@@ -565,6 +565,7 @@ int MIPS4KC::process_ID (PIPE_STAGE ps, int *stall, int mult_div_busy)
       out.output(CALL_INFO, "invalid instruction (pc %x) @ %lld\n",
                  PC.getData(),
                  reg_word::getNow());
+      fflush(NULL);
   }
 
   switch (OPCODE (inst))

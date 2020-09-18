@@ -35,11 +35,11 @@ elif baseExec == "tmr_matmatO3.out":
 elif baseExec == "qsort.out":
     faultPeriod = 141090
 elif baseExec == "qsortO3.out":
-    faultPeriod = 54089
+    faultPeriod = 114691
 elif baseExec == "rd_qsort.out":
     faultPeriod = 151180
 elif baseExec == "rd_qsortO3.out":
-    faultPeriod = 54331
+    faultPeriod = 114691
 else:
     print("Unrecognized executable. Using default faultPeriod")
     faultPeriod = 100000

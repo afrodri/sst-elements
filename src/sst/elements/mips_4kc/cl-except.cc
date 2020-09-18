@@ -447,7 +447,11 @@ int MIPS4KC::psig (void)
       return (1);
 
     default:
-      write_output (message_out, "Program terminated.\n");
+        {
+            char str[100];
+            sprintf(str, "Program terminated @ %llu\n", reg_word::getNow());
+            write_output (message_out, str);
+        }
       return (-1);
     }
   }
