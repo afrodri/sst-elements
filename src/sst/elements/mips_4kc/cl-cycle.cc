@@ -561,6 +561,12 @@ int MIPS4KC::process_ID (PIPE_STAGE ps, int *stall, int mult_div_busy)
   inst = ps->inst;
   tmp_PC = PC + BYTES_PER_WORD;
 
+  if (inst == 0) {
+      out.output(CALL_INFO, "invalid instruction (pc %x) @ %lld\n",
+                 PC.getData(),
+                 reg_word::getNow());
+  }
+
   switch (OPCODE (inst))
     {
     case Y_ADD_OP:

@@ -236,8 +236,8 @@ instruction * MIPS4KC::bad_text_read (mem_addr addr)
 {
   mem_word bits;
 
-  READ_MEM_WORD (bits, addr);
   out.output(CALL_INFO, "bad text read @ %lld\n", reg_word::getNow());
+  READ_MEM_WORD (bits, addr);
   return (inst_decode (bits));
 }
 
