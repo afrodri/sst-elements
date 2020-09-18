@@ -1,4 +1,4 @@
-#!/opt/local/bin/perl -w
+#!/usr/bin/perl -w
 
 # ./runSome.pl <execFile> <outputFile>
 
@@ -10,7 +10,7 @@
     #"" => , #CONTROL	52
     "0x200I" => 40, #INST_ADDR	data
     "0x200C" => 16, #INST_ADDR	control
-    "0x400D" => 32, #INST_TYPE - data	
+    "0x400d" => 32, #INST_TYPE - data	
     "0x400C" => 5, #INST_TYPE - control	
     "0x4D" => 233, #MDU - data	
     "0x4C" => 122, #MDU - control	
@@ -26,7 +26,7 @@
     "0x800D" => 5, #RF control (WB_ADDR)	
     "0x80D" => 32, #MEM_bp_val -data	
     "0x20D" => 32, # WB
-    "0x2000D" => 64 #PC
+    "0x2000d" => 64 #PC
     );
 $maxChance = 0;
 
@@ -59,14 +59,18 @@ sub getFault() {
     my $type = chop($f);
     if ($type eq 'I') {
         # try to get a 'valid' instruction which is still the wrong
-        # instruction. Pick one bit in 0b0000111100
-        my $roll2 = int(rand(4));
+        # instruction. Pick one bit in 0b0011111100
+        my $roll2 = int(rand(6));
         my $b = 1 << ($roll2 + 2);
         #printf("I $roll2 %x\n", $b);
     } elsif ($type eq 'B') {
         # pick one byte
         my $roll2 = int(rand(4));
         my $b = 0xff << ($roll2 * 4);
+    } elsif ($type eq 'd') {
+        # pick one byte
+        my $roll2 = int(rand(30));
+        my $b = 1 << ($roll2 + 2);
     } elsif ($type eq 'D') {
         $b = 0;
     } elsif ($type eq 'C') {
