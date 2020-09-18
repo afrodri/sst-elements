@@ -65,6 +65,8 @@ foreach my $fp (glob("$dir/sstOut*")) {
   $done = 0;
   $injPoint = -1;
   my $numFound = 0;
+  my $debug = 0;  # for debuging results if numFound / somFound don't
+                  # match
 
 
   open my $fh, "<", $fp or die "can't read open '$fp': $OS_ERROR";
@@ -80,6 +82,7 @@ foreach my $fp (glob("$dir/sstOut*")) {
               #finished fine
               $results{$execFile}{$faultLoc}{"CORRECT"}++;
           }
+          if ($debug) {printf("C");}
           $done = 1;  # mark done so we only count once
       } elsif (!$done && $line =~ /INJECTING/) {
           @ws = split(/ /,$line);
@@ -87,20 +90,29 @@ foreach my $fp (glob("$dir/sstOut*")) {
                                          # data on load: no effect'
               $injPoint = $ws[-1];
           }
+      } elsif (!$done && $line =~ /UNRECOVERABLE ERROR: 65280/) {
+          # special case, probably caused by INST_TYPE
+          $results{$execFile}{$faultLoc}{"terminated"}++;
+          if ($debug) {printf("U");}
+          if ($done) {printf("X\n");}
       } elsif (!$done && $line =~ /invalid instruction/) {
           calcFailDist($line, $injPoint, $execFile, $faultLoc);
           $results{$execFile}{$faultLoc}{"terminated"}++;
+          if ($debug) {printf("T");}
           if ($done) {printf("X\n");}
       } elsif (!$done && $line =~ /Unknown ex/) {
           calcFailDist($line, $injPoint, $execFile, $faultLoc);
           $results{$execFile}{$faultLoc}{"terminated"}++;
+          if ($debug) {printf("T");}
           if ($done) {printf("X\n");}
       } elsif (!$done && $line =~ /terminated/) {
           calcFailDist($line, $injPoint, $execFile, $faultLoc);
           $results{$execFile}{$faultLoc}{"terminated"}++;
+          if ($debug) {printf("T");}
           if ($done) {printf("X\n");}
       } elsif (!$done && $line =~ /Timeout/) {
           $results{$execFile}{$faultLoc}{"Timeout"}++;
+          if ($debug) {printf("TO");}
           if ($done) {printf("X\n");}
       } elsif ($line =~ /CORRECTED_MATH/) {
           @ws = split(/ /,$line);
@@ -120,6 +132,7 @@ foreach my $fp (glob("$dir/sstOut*")) {
           $line =~ s/--*/-/g;
           @ws = split(/-/,$line);
           $faultLoc = $ws[1];
+          if ($debug) {printf("\n $faultLoc ");}
           # next run
           $done = 0;
           $injPoint = -1;
