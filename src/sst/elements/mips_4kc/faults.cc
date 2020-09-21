@@ -528,6 +528,10 @@ void faultChecker_t::checkAndInject_INST_TYPE_FAULT(pipe_stage *ps_ptr) {
         // get the old instruction encoding
         unsigned long encoding = ps_ptr->inst->encoding;
         // permute it
+        if (flippedBits == 0) {
+            int bit = rng->generateNextUInt32() & 0x1f;
+            flippedBits = (1<<bit);
+        }
         encoding ^= flippedBits;
         // reencode
         instruction *newInst = MIPS4KC::inst_decode(encoding);
