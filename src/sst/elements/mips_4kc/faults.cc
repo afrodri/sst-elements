@@ -360,9 +360,15 @@ bool faultChecker_t::checkForFault(faultTrack::location_t loc, uint32_t &faulted
 
 #define STD_F_CASE(STR) \
         case STR: \
-            newLoc = STR##_IDX;                 \
-            event_count[STR##_IDX]++;           \
-            if (reg_word::getNow() == faultTime[STR##_IDX]) {return true;} \
+            newLoc = STR##_IDX;                                         \
+            event_count[STR##_IDX]++;                                   \
+            if (fault_by_time) {                                        \
+                if (reg_word::getNow() == faultTime[STR##_IDX]) {return true;} \
+            } else {                                                    \
+                if(event_count[STR##_IDX] == faultTime[STR##_IDX]) {    \
+                    return true;                                        \
+                }                                                       \
+            }                                                           \
             break;
 
         STD_F_CASE(WB_FAULT);
