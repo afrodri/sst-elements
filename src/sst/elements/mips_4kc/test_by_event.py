@@ -101,7 +101,7 @@ elif baseExec == "rd_matmatO3.out":
     elif (options.faultLoc == 0x800):
         faultPeriod = 8364 #WB_ADDR
 elif baseExec == "tmr_matmat.out":
-    faultPeriod = 452000
+    faultPeriod = 450000
     if options.faultLoc == 0x4:
         faultPeriod = 5184 #MDU
     elif (options.faultLoc == 0x8 or options.faultLoc == 0x10 or options.faultLoc == 0x1000):
@@ -173,7 +173,7 @@ comp_mips.addParams({
     "fault_period" : faultPeriod,
     "fault_by_time" : 0,
     "fault_bits" : options.faultBits,    
-    "timeout" : 500000
+    "timeout" : 2000000
 })
 
 comp_l1cache = sst.Component("l1cache", "memHierarchy.Cache")

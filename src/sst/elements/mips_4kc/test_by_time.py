@@ -57,7 +57,7 @@ comp_mips.addParams({
     "fault_period" : faultPeriod,
     "fault_by_time" : 1,
     "fault_bits" : options.faultBits,    
-    "timeout" : 1000000
+    "timeout" : 2000000
 })
 
 comp_l1cache = sst.Component("l1cache", "memHierarchy.Cache")
