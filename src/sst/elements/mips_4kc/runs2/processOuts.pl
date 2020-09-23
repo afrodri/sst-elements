@@ -38,13 +38,34 @@ sub getFStr($) {
     return $fStr;
 }
 
+sub getNameStr($) {
+    my $nameStr = shift;
+
+    $nameStr =~ s/matmat//;
+    $nameStr =~ s/_//;
+    if ($nameStr eq "") {
+        $nameStr = "matmat";
+    } elsif ($nameStr eq "O3") {
+        $nameStr = "matmatO3";
+    }
+    return $nameStr;
+}
+
 sub calcFailDist($$$$) {
     my ($line, $injPoint, $execFile, $faultLoc) = @_;
     my @ws = split(/ /,$line);
     my $failPoint = $ws[-1];
     my $failDist = $failPoint - $injPoint;
-    # need to store
-    #printf("fail d %d\n", $failDist);
+    # bin
+    my $useDist = int(log($failDist)/log(2));
+    # store
+    $failDists{$execFile}{$faultLoc}{$useDist}++;
+    $failNum{$execFile}{$faultLoc}++;
+    if (defined($failSum{$execFile}{$faultLoc})) {
+        $failSum{$execFile}{$faultLoc} += $failDist;
+    } else {
+        $failSum{$execFile}{$faultLoc} = $failDist;
+    }
 }
 
 
@@ -52,10 +73,16 @@ sub calcFailDist($$$$) {
 
 
 my $dir ="./out";
+if (defined($ARGV[0])) {
+    $dir = $ARGV[0];
+}
 my $numP = 0;
+my $tNumFound = 0;
 foreach my $fp (glob("$dir/sstOut*")) {
   printf "processing %s (#%d) found: ", $fp, ++$numP;
 
+  #if ($numP > 200) {last;}
+  
   @fp_w = split(/-/,$fp);
   $fp_w[1] =~ s/\..*//;  #remove end
   $execFile = $fp_w[1];
@@ -63,7 +90,7 @@ foreach my $fp (glob("$dir/sstOut*")) {
   printf(" exec:%s Qs:%d\n", $execFile, $isQSort);
 
   $done = 0;
-  $injPoint = -1;
+  $injPoint = -2;
   my $numFound = 0;
   my $debug = 0;  # for debuging results if numFound / somFound don't
                   # match
@@ -129,6 +156,16 @@ foreach my $fp (glob("$dir/sstOut*")) {
               $results{$execFile}{$faultLoc}{"#WBE"} += $ws[2];
           }
       } elsif ($line =~ /-----------/) {
+          # find logical masking (e.g. fault injected but not used)
+          if ($injPoint != -2) { #ignore first run
+              if ($injPoint == -1) {
+                  # fault not injected into relevant part
+                  $noInjPoint{$execFile}{$faultLoc}++;
+              }
+              $injRuns{$execFile}{$faultLoc}++;
+          }
+
+
           $line =~ s/--*/-/g;
           @ws = split(/-/,$line);
           $faultLoc = $ws[1];
@@ -137,6 +174,7 @@ foreach my $fp (glob("$dir/sstOut*")) {
           $done = 0;
           $injPoint = -1;
           $numFound++;
+          $tNumFound++;
       }
 
   }
@@ -152,7 +190,7 @@ foreach my $fp (glob("$dir/sstOut*")) {
           }
       }
   }
-  printf(" %d / %d\n", $numFound, $sumFound);
+  printf(" %d / %d (%d total)\n", $numFound, $sumFound, $tNumFound);
   close $fh or die "can't read close '$fp': $OS_ERROR";
 }
 
@@ -167,6 +205,7 @@ foreach $r (@resCat, @statCat) {
 }
 printf("\n");
 
+#print main results
 foreach $e (sort keys %results) {
     foreach $f (sort keys %{$results{$e}}) {
 
@@ -180,14 +219,7 @@ foreach $e (sort keys %results) {
             }
         }
 
-        $nameStr = $e;
-        $nameStr =~ s/matmat//;
-        $nameStr =~ s/_//;
-        if ($nameStr eq "") {
-            $nameStr = "matmat";
-        } elsif ($nameStr eq "O3") {
-            $nameStr = "matmatO3";
-        }
+        $nameStr = getNameStr($e);
         printf("%10s\t%10s\t%6d\t\t", substr($nameStr,0,10), $fStr, $runs{$e});
 
         foreach $r (@resCat) {
@@ -227,3 +259,40 @@ foreach $e (sort keys %results) {
         printf("\n");
     }
 }
+
+# print fail distance histograms
+printf("\nHistograms of fault-to-fail distance:\n");
+foreach $e (sort keys %failDists) {
+    my $nmStr = getNameStr($e);
+
+    foreach $f (sort keys %{$failDists{$e}}) {
+
+        $fStr = getFStr($f);
+
+        printf("%s %s avg %f\n", $nmStr, $fStr,
+               $failSum{$e}{$f}/$failNum{$e}{$f});
+        
+        foreach $d (sort  {$a <=> $b}keys %{$failDists{$e}{$f}} ) {
+            printf("%s %s 2^$d %d\n", $nmStr, $fStr, $failDists{$e}{$f}{$d});
+        }
+    }
+}
+
+
+#logical masking
+printf("\ninjections into parts that are not used:\n");
+foreach $e (sort keys %injRuns) {
+    foreach $f (sort keys %{$injRuns{$e}}) {
+        $fStr = getFStr($f);
+        $nameStr = getNameStr($e);
+
+        if (!defined($noInjPoint{$e}{$f})) {
+            $noInjPoint{$e}{$f} = 0;
+        }
+        my $unusedPer = 100.0 * $noInjPoint{$e}{$f} / $injRuns{$e}{$f};
+        
+        printf("%10s\t%10s\t%6.2f%%\n", substr($nameStr,0,10), $fStr, $unusedPer);
+
+    }
+}
+    
