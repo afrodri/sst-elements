@@ -8,7 +8,7 @@ set f = $2
 while ($i < 1)
     date
     set ii = 0
-    while ($ii < 1)  # run x in parallel
+    while ($ii < 12)  # run x in parallel
         set tempfoo = "out_e/sstOut-$1"
         set TMPFILE = `mktemp ${tempfoo}.XXXXX` || exit 1
 #        set str = "sst ../test_by_time.py -- -e $e -f $f"

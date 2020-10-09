@@ -87,10 +87,10 @@ $e = $ARGV[0];
 $f = $ARGV[1];
 $file = $ARGV[2];
 srand();
-while ($i < 10) {
+while ($i < 9) {
     my $b = getFault($f);
     $str = "sst ../test_by_event.py -- -e $e -f $f -b $b";
-    if (1) { # test
+    if (0) { # test
         printf("$str\n");
         printf("$file\n");
     } else {

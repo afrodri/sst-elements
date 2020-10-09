@@ -78,22 +78,27 @@ if (defined($ARGV[0])) {
 }
 my $numP = 0;
 my $tNumFound = 0;
+my $verbose = 0;
+my $debug = 0;  # for debuging results if numFound / somFound don't match
+
 foreach my $fp (glob("$dir/sstOut*")) {
-  printf "processing %s (#%d) found: ", $fp, ++$numP;
+    if ($verbose) {
+        printf "processing %s (#%d) found: ", $fp, ++$numP;
+    }
 
-  #if ($numP > 200) {last;}
-  
-  @fp_w = split(/-/,$fp);
-  $fp_w[1] =~ s/\..*//;  #remove end
-  $execFile = $fp_w[1];
-  $isQSort = ($execFile =~ /qsort/);
-  printf(" exec:%s Qs:%d\n", $execFile, $isQSort);
+    #if ($numP > 200) {last;}
+    
+    @fp_w = split(/-/,$fp);
+    $fp_w[1] =~ s/\..*//;  #remove end
+    $execFile = $fp_w[1];
+    $isQSort = ($execFile =~ /qsort/);
+    if ($verbose) {
+        printf(" exec:%s Qs:%d\n", $execFile, $isQSort);
+    }
 
-  $done = 0;
-  $injPoint = -2;
-  my $numFound = 0;
-  my $debug = 0;  # for debuging results if numFound / somFound don't
-                  # match
+    $done = 0;
+    $injPoint = -2;
+    my $numFound = 0;
 
 
   open my $fh, "<", $fp or die "can't read open '$fp': $OS_ERROR";
@@ -190,7 +195,9 @@ foreach my $fp (glob("$dir/sstOut*")) {
           }
       }
   }
-  printf(" %d / %d (%d total)\n", $numFound, $sumFound, $tNumFound);
+  if ($verbose) {
+      printf(" %d / %d (%d total)\n", $numFound, $sumFound, $tNumFound);
+  }
   close $fh or die "can't read close '$fp': $OS_ERROR";
 }
 
