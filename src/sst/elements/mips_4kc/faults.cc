@@ -360,9 +360,15 @@ bool faultChecker_t::checkForFault(faultTrack::location_t loc, uint32_t &faulted
 
 #define STD_F_CASE(STR) \
         case STR: \
-            newLoc = STR##_IDX;                 \
-            event_count[STR##_IDX]++;           \
-            if (reg_word::getNow() == faultTime[STR##_IDX]) {return true;} \
+            newLoc = STR##_IDX;                                         \
+            event_count[STR##_IDX]++;                                   \
+            if (fault_by_time) {                                        \
+                if (reg_word::getNow() == faultTime[STR##_IDX]) {return true;} \
+            } else {                                                    \
+                if(event_count[STR##_IDX] == faultTime[STR##_IDX]) {    \
+                    return true;                                        \
+                }                                                       \
+            }                                                           \
             break;
 
         STD_F_CASE(WB_FAULT);
@@ -528,6 +534,10 @@ void faultChecker_t::checkAndInject_INST_TYPE_FAULT(pipe_stage *ps_ptr) {
         // get the old instruction encoding
         unsigned long encoding = ps_ptr->inst->encoding;
         // permute it
+        if (flippedBits == 0) {
+            int bit = rng->generateNextUInt32() & 0x1f;
+            flippedBits = (1<<bit);
+        }
         encoding ^= flippedBits;
         // reencode
         instruction *newInst = MIPS4KC::inst_decode(encoding);
@@ -549,10 +559,17 @@ void faultChecker_t::checkAndInject_WB_ADDR_FAULT(reg_word (&R)[32],
     uint32_t flippedBits = 0;
     if(checkForFault(WB_ADDR_FAULT, flippedBits)) {
         // find (wrong) destination to write to
+        faultDesc f = getFault(WB_ADDR_FAULT, flippedBits);
+        flippedBits &= 0x1f;
+        if (flippedBits == 0) {
+            // nothing was flipped, so let's pick something
+            int bit = rng->generateNextUInt32() % 5;
+            flippedBits = (1<<bit);
+        } 
+        
         useIdx ^= flippedBits;
         useIdx &= 0x1f; // ignore anything over 31
 
-        faultDesc f = getFault(WB_ADDR_FAULT, flippedBits);
 
         printf("INJECTING WB_ADDR Fault (r[%u] instead of r[%u]) @ %lld\n",
                useIdx, origIdx, reg_word::getNow());

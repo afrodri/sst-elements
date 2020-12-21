@@ -91,7 +91,7 @@ $e = $ARGV[0];
 $file = $ARGV[1];
 srand();
 initProb();
-while ($i < 100) {
+while ($i < 5) {
     my ($f, $b) = getFault();
     $str = "sst ../test_by_time.py -- -e $e -f $f -b $b";
     if (0) { # test
