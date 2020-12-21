@@ -196,7 +196,7 @@ class reg_word {
         }
 
         if (data != in) {
-            printf("SHADOW MISMATCH data %x in %x\n", data, in);
+            printf("SHADOW MISMATCH data:%x in:%x addr:%x\n", data, in, addr);
         }
 
         //assert(data == in);

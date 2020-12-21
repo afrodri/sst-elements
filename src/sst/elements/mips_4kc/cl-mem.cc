@@ -35,7 +35,9 @@ void MIPS4KC::CL_READ_MEM_INST(instruction* &LOC, const reg_word &ADDR,
         LOC = text_seg [(_addr_ - TEXT_BOT) >> 2];                 
     else if (_addr_ >= K_TEXT_BOT && _addr_ < k_text_top && !(_addr_ & 0x3)) 
         LOC = k_text_seg [(_addr_ - K_TEXT_BOT) >> 2];
-    else CL_RAISE_EXCEPTION(tmp, 0, EXPT);    	
+    else {
+        CL_RAISE_EXCEPTION(tmp, 0, EXPT);
+    }
 }
 
 void MIPS4KC::CL_READ_MEM(reg_word &LOC, const reg_word &ADDR,
@@ -68,7 +70,9 @@ void MIPS4KC::CL_READ_MEM(reg_word &LOC, const reg_word &ADDR,
             LOC = stack_seg [(_addr_ - stack_bot)>>2];
         else if (_addr_ >= K_DATA_BOT && _addr_ < k_data_top)
             LOC = k_data_seg [(_addr_ - K_DATA_BOT)>>2];
-        else CL_RAISE_EXCEPTION(tmp, 0, EXPT);
+        else {
+            CL_RAISE_EXCEPTION(tmp, 0, EXPT);
+        }
     }
 
     assert(sz == req->data.size());
@@ -89,8 +93,15 @@ void MIPS4KC::CL_READ_MEM(reg_word &LOC, const reg_word &ADDR,
     }
     //assert(LOC.getData() == data); 
 
-    // note incoming faulted data and add in the data
-    LOC.checkReadForFaults(ADDR,data,sz);
+    // if read is from 'kernel' memory, we use the incoming data since
+    // it may be comgin from a different processor (or UART)
+    if (_addr_ >= K_DATA_BOT && _addr_ < k_data_top) {
+        LOC = data;
+        // should we check this data and record faults?
+    } else {    
+        // note incoming faulted data and add in the data
+        LOC.checkReadForFaults(ADDR,data,sz);
+    }
 }
 
 void MIPS4KC::CL_SET_MEM(const reg_word &ADDR, mem_addr &PADDR, 
@@ -125,7 +136,10 @@ void MIPS4KC::CL_SET_MEM(const reg_word &ADDR, mem_addr &PADDR,
             stack_seg [(_addr_ - stack_bot)>>2] = (VALUE.getData()); 
         } else if (_addr_ >= K_DATA_BOT && _addr_ < k_data_top)  
             k_data_seg [(_addr_ - K_DATA_BOT)>>2] = (VALUE.getData());
-        else CL_RAISE_EXCEPTION(tmp, 0, EXPT);
+        else {
+            printf("store cl_except %x %x %x\n", _addr_, K_DATA_BOT, k_data_top);
+            CL_RAISE_EXCEPTION(tmp, 0, EXPT);
+        }
     }
     
     assert(sz == req->data.size());

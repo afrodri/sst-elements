@@ -124,7 +124,9 @@ libmemHierarchy_la_SOURCES = \
 	Sieve/memmgr_sieve.cc \
 	Sieve/memmgr_sieve.h \
 	memNetBridge.h \
-	memNetBridge.cc
+	memNetBridge.cc \
+	uart.cc \
+	uart.h
 
 EXTRA_DIST = \
         Sieve/tests/StatisticOutput.csv.gold \

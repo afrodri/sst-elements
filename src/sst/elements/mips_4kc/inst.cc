@@ -44,6 +44,8 @@
 using namespace SST;
 using namespace SST::MIPS4KCComponent;
 
+//make CXXFLAGS="-g -O0  -std=c++1y -D__STDC_FORMAT_MACROS"
+#warning possible problems compiling in clang++ with optimization
 
 /* Local variables: */
 
