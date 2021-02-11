@@ -438,7 +438,13 @@ int MIPS4KC::cycle_spim (int display)
 
             DSLOT(ps_ptr) = bd_slot;
             if (EXCPT (ps_ptr) == 0) {
-                process_ID (ps_ptr, &id_stall, MDU.count);
+                int ret = process_ID (ps_ptr, &id_stall, MDU.count);
+                if (ret == -1) {
+                    // we got an 'invalid instruction' exception from
+                    // a fault.
+                    assert(quiescent);
+                    continue;
+                }
                 if (!id_stall)
                     bd_slot = ((DSLOT(ps_ptr) == TRUE) ? FALSE :
                                (IS_BRANCH (OPCODE(ps_ptr->inst)) ? TRUE : FALSE));
@@ -602,7 +608,7 @@ int MIPS4KC::process_ID (PIPE_STAGE ps, int *stall, int mult_div_busy)
 {
   instruction *inst;
   reg_word tmp_PC;
-  int excpt = -1;
+  int excpt = 0;
 #warning should check for PC faulty assignments here and report
   inst = ps->inst;
   tmp_PC = PC + BYTES_PER_WORD;
@@ -611,7 +617,9 @@ int MIPS4KC::process_ID (PIPE_STAGE ps, int *stall, int mult_div_busy)
       out.output(CALL_INFO, "invalid instruction (pc %x) @ %lld\n",
                  PC.getData(),
                  reg_word::getNow());
-      fflush(NULL);
+      quiesce();      
+      fflush(NULL);      
+      return -1;
   }
 
   switch (OPCODE (inst))
@@ -2368,7 +2376,7 @@ void MIPS4KC::stage_dealloc (PIPE_STAGE ps)
 
   // faulted instructions are created for this pipe stage only (they
   // are not in memory), so they should be freed
-  if (ps->inst->faulted) {
+  if (ps->inst && ps->inst->faulted) {
       free_inst(ps->inst);
   } 
   

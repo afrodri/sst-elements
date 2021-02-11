@@ -208,7 +208,23 @@ bool MIPS4KC::clockTic( Cycle_t c)
         if (cl_run_falling (PC, outputLevel)) {
             primaryComponentOKToEndSim();
             return true; // stop
-        }    
+        }
+
+#if 0
+        /* "Auto-wake" */
+        static int c = 0;
+        if (quiescent) {
+            if (c == 0) {
+                c = 100;
+            } else if (c > 0) {
+                c--;
+                if (c == 0) {
+                    wake_from_reset();
+                }
+            }
+        }
+#endif
+        
     } else {
         cl_run_rising(); // issue memory requests
     }
