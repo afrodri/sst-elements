@@ -1,0 +1,114 @@
+Fault Injector: Inject faults at 0x0
+Fault Injector: Bitmask 0x0
+NOT COPYING ENVIORN TO STACK
+memory, WARNING: loading backend in legacy mode (from parameter set). Instead, load backend into this controller's 'backend' slot via ctrl.setSubComponent() in configuration.
+UART, WARNING: loading backend in legacy mode (from parameter set). Instead, load backend into this controller's 'backend' slot via ctrl.setSubComponent() in configuration.
+Fault Injector: Inject faults at 0x0
+Fault Injector: Bitmask 0x0
+NOT COPYING ENVIORN TO STACK
+memory1, WARNING: loading backend in legacy mode (from parameter set). Instead, load backend into this controller's 'backend' slot via ctrl.setSubComponent() in configuration.
+UART1, WARNING: loading backend in legacy mode (from parameter set). Instead, load backend into this controller's 'backend' slot via ctrl.setSubComponent() in configuration.
+MIPS4KC:clockTic:184: CYCLE 3: 1.1
+MIPS4KC:clockTic:184: CYCLE 3: 1.1
+SHADOW MISMATCH data:1 in:0 addr:7fffefdc
+PRINT_INT_SYSCALL(p0): 0 0 0
+PRINT_INT_SYSCALL(p1): 1 1 1
+SHADOW MISMATCH data:1 in:0 addr:7fffefdc
+Handle Write
+uart adding to tx-buffer (sz 4 addr ffffffff00000008):0 0 de ad 
+Handle Write
+uart adding to tx-buffer (sz 4 addr ffffffff00000008):0 0 de ae 
+Handle Write
+UART sending: 0x0000dead
+Handle Write
+UART sending: 0x0000deae
+UART got 0000dead from other UART
+UART got 0000deae from other UART
+MIPS4KC:clockTic:184: CYCLE 16387: 8193.1
+MIPS4KC:clockTic:184: CYCLE 16387: 8193.1
+MIPS4KC:clockTic:184: CYCLE 32771: 16385.1
+MIPS4KC:clockTic:184: CYCLE 32771: 16385.1
+MIPS4KC:clockTic:184: CYCLE 49155: 24577.1
+MIPS4KC:clockTic:184: CYCLE 49155: 24577.1
+MIPS4KC:clockTic:184: CYCLE 65539: 32769.1
+MIPS4KC:clockTic:184: CYCLE 65539: 32769.1
+MIPS4KC:clockTic:184: CYCLE 81923: 40961.1
+MIPS4KC:clockTic:184: CYCLE 81923: 40961.1
+MIPS4KC:clockTic:184: CYCLE 98307: 49153.1
+MIPS4KC:clockTic:184: CYCLE 98307: 49153.1
+MIPS4KC:clockTic:184: CYCLE 114691: 57345.1
+MIPS4KC:clockTic:184: CYCLE 114691: 57345.1
+MIPS4KC:clockTic:184: CYCLE 131075: 65537.1
+MIPS4KC:clockTic:184: CYCLE 131075: 65537.1
+MIPS4KC:clockTic:184: CYCLE 147459: 73729.1
+MIPS4KC:clockTic:184: CYCLE 147459: 73729.1
+MIPS4KC:clockTic:184: CYCLE 163843: 81921.1
+MIPS4KC:clockTic:184: CYCLE 163843: 81921.1
+UART Read from ffffffff00000004 4 bytes
+UART ready status: 1
+UART Read from ffffffff00000004 4 bytes
+UART ready status: 1
+UART Read from ffffffff0000000c 4 bytes
+UART Read from ffffffff0000000c 4 bytes
+SHADOW MISMATCH data:dead in:deae addr:7fffefd8
+PRINT_INT_SYSCALL(p0): 57006 57006 deae
+PRINT_INT_SYSCALL(p1): 57005 57005 dead
+Fault Stats:
+FAULTED : 0
+CORRECTED_MATH : 0
+CORRECTED_MEM : 0
+CORRECTED_TMR : 0
+CORRECTED_SQUASH : 0
+READ_ADDR_ERROR : 0
+READ_DATA_ERROR : 0
+WB_ERROR : 0
+WB_ADDR_ERROR : 0
+WB_ADDR_NO_ERROR : 0
+INST_ERROR : 0
+WRITE_ADDR_ERROR : 0
+WRITE_DATA_ERROR : 0
+Faultable Events:
+	RF_FAULT_event : 90089
+	ID_FAULT_event : 0
+	MDU_FAULT_event : 0
+	MEM_PRE_ADDR_FAULT_event : 25020
+	MEM_POST_FAULT_event : 25020
+	WB_FAULT_event : 65046
+	ALU_FAULT_event : 60045
+	MEM_BP_FAULT_event : 90070
+	CONTROL_FAULT_event : 0
+	INST_ADDR_FAULT_event : 65052
+	INST_TYPE_FAULT_event : 65052
+	WB_ADDR_FAULT_event : 50034
+	MEM_PRE_DATA_FAULT_event : 25020
+	PC_FAULT_event : 90089
+Fault Stats:
+FAULTED : 0
+CORRECTED_MATH : 0
+CORRECTED_MEM : 0
+CORRECTED_TMR : 0
+CORRECTED_SQUASH : 0
+READ_ADDR_ERROR : 0
+READ_DATA_ERROR : 0
+WB_ERROR : 0
+WB_ADDR_ERROR : 0
+WB_ADDR_NO_ERROR : 0
+INST_ERROR : 0
+WRITE_ADDR_ERROR : 0
+WRITE_DATA_ERROR : 0
+Faultable Events:
+	RF_FAULT_event : 90089
+	ID_FAULT_event : 0
+	MDU_FAULT_event : 0
+	MEM_PRE_ADDR_FAULT_event : 25020
+	MEM_POST_FAULT_event : 25020
+	WB_FAULT_event : 65046
+	ALU_FAULT_event : 60045
+	MEM_BP_FAULT_event : 90070
+	CONTROL_FAULT_event : 0
+	INST_ADDR_FAULT_event : 65052
+	INST_TYPE_FAULT_event : 65052
+	WB_ADDR_FAULT_event : 50034
+	MEM_PRE_DATA_FAULT_event : 25020
+	PC_FAULT_event : 90089
+Simulation is complete, simulated time: 180.177 us

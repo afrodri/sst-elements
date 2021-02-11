@@ -1,0 +1,54 @@
+Fault Injector: Inject faults at 0x0
+Fault Injector: Bitmask 0x0
+NOT COPYING ENVIORN TO STACK
+memory, WARNING: loading backend in legacy mode (from parameter set). Instead, load backend into this controller's 'backend' slot via ctrl.setSubComponent() in configuration.
+UART, WARNING: loading backend in legacy mode (from parameter set). Instead, load backend into this controller's 'backend' slot via ctrl.setSubComponent() in configuration.
+MIPS4KC:clockTic:184: CYCLE 3: 1.1
+PRINT_INT_SYSCALL(p0): 0 0 0
+Handle Write
+uart adding to tx-buffer (sz 4 addr ffffffff00000008):0 0 de ad 
+Handle Write
+UART output: 0x0000dead
+MIPS4KC:clockTic:184: CYCLE 16387: 8193.1
+MIPS4KC:clockTic:184: CYCLE 32771: 16385.1
+MIPS4KC:clockTic:184: CYCLE 49155: 24577.1
+MIPS4KC:clockTic:184: CYCLE 65539: 32769.1
+MIPS4KC:clockTic:184: CYCLE 81923: 40961.1
+MIPS4KC:clockTic:184: CYCLE 98307: 49153.1
+MIPS4KC:clockTic:184: CYCLE 114691: 57345.1
+MIPS4KC:clockTic:184: CYCLE 131075: 65537.1
+MIPS4KC:clockTic:184: CYCLE 147459: 73729.1
+MIPS4KC:clockTic:184: CYCLE 163843: 81921.1
+UART Read from ffffffff00000004 4 bytes
+UART ready status: 0
+PRINT_INT_SYSCALL(p0): 0 0 0
+Fault Stats:
+FAULTED : 0
+CORRECTED_MATH : 0
+CORRECTED_MEM : 0
+CORRECTED_TMR : 0
+CORRECTED_SQUASH : 0
+READ_ADDR_ERROR : 0
+READ_DATA_ERROR : 0
+WB_ERROR : 0
+WB_ADDR_ERROR : 0
+WB_ADDR_NO_ERROR : 0
+INST_ERROR : 0
+WRITE_ADDR_ERROR : 0
+WRITE_DATA_ERROR : 0
+Faultable Events:
+	RF_FAULT_event : 90081
+	ID_FAULT_event : 0
+	MDU_FAULT_event : 0
+	MEM_PRE_ADDR_FAULT_event : 25017
+	MEM_POST_FAULT_event : 25017
+	WB_FAULT_event : 65041
+	ALU_FAULT_event : 60040
+	MEM_BP_FAULT_event : 90062
+	CONTROL_FAULT_event : 0
+	INST_ADDR_FAULT_event : 65047
+	INST_TYPE_FAULT_event : 65047
+	WB_ADDR_FAULT_event : 50030
+	MEM_PRE_DATA_FAULT_event : 25017
+	PC_FAULT_event : 90081
+Simulation is complete, simulated time: 180.161 us
