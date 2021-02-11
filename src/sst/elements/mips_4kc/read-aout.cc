@@ -151,6 +151,7 @@ int MIPS4KC::read_aout_file (const char *file_name)
                 assert(data->d_size == 24);
                 uint32_t* wp = (uint32_t*)(data->d_buf) + 5;
                 R[REG_GP] = *wp; // set $gp
+                program_starting_gp = *wp;
                 if (outputLevel > 0) {
                     printf(" Setting $gp to 0x%x\n", R[REG_GP].getData());
                 }

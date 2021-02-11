@@ -120,11 +120,7 @@ void MIPS4KC::initialize_catch_signals (void)
   handler.sv_mask = 0;
   handler.sv_onstack = 0;
 
-#ifdef mips
-  if (cycle_level) handler.sv_handler = intercept_signals;
-  else
-#endif
-    handler.sv_handler = SIG_DFL;
+  handler.sv_handler = SIG_DFL;
   for (x=0; x<NSIG; x++)
     sigvec (x, &handler, NULL);
 }
@@ -357,29 +353,6 @@ reg_word MIPS4KC::compute_branch_target (instruction *inst)
   /* printf("%x\n", tmp_PC); */
   return(tmp_PC);
 }
-
-
-
-
-/* spim's signal handler, catch signals off of unix */
-
-void MIPS4KC::intercept_signals (int sig, int code, struct sigcontext *scp)
-{
-  if (!cycle_running) {
-    if (spim_related_sig & (1 << sig))
-      sig_mesg (sig, "occurred.  Possible internal error?\n");
-    else if (sig == SIGINT)
-      write_output (message_out, "Quit\n");
-    else
-      sig_mesg (sig, "occurred. ?\n");
-    cycle_steps = 0;
-    /*longjmp (spim_top_level_env, 1);*/
-  }
-  else if (spim_related_sig & (1 << sig))
-    cycle_steps = 0;
-  else psignal (sig);
-}
-
 
 
 

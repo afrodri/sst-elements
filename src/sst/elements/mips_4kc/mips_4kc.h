@@ -85,27 +85,6 @@ struct pipe_stage {
 };
 typedef struct pipe_stage *PIPE_STAGE;
 
-#if 0
-typedef struct lab_use
-{
-  instruction *inst;            /* NULL => Data, not code */
-  mem_addr addr;
-  struct lab_use *next;
-} label_use;
-
-typedef struct lab
-{
-  char *name;                   /* Name of label */
-  long addr;                    /* Address of label or 0 if not yet defined */
-  unsigned global_flag : 1;     /* Non-zero => declared global */
-  unsigned gp_flag : 1;         /* Non-zero => referenced off gp */
-  unsigned const_flag : 1;      /* Non-zero => constant value (in addr) */
-  struct lab *next;             /* Hash table link */
-  struct lab *next_local;       /* Link in list of local labels */
-  label_use *uses;              /* List of instructions that reference */
-} label;                        /* label that has not yet been defined */
-#endif
-
 class MIPS4KC : public SST::Component {
 public:
 /* Element Library Info */
@@ -144,6 +123,10 @@ protected:
     int cl_run_falling (reg_word addr, int display);
     void cl_initialize_world (int run);
     void cycle_init (void);
+    /* go into a quiescent state after a fault */
+    void quiesce();
+    /* leave quiescent after a reset */
+    void wake_from_reset();
     void mdu_and_fp_init (void);
     void print_pipeline (void);
     void print_pipeline_internal (char *buf);
@@ -222,7 +205,6 @@ protected:
     int process_excpt (void);
     void print_except_stats (void);
     void print_signal_status (int sig);
-    void intercept_signals (int sig, int code, struct sigcontext *scp);
     reg_word compute_branch_target (instruction *inst);
     void psignal (int sig);
     int issig (void);
@@ -276,7 +258,9 @@ protected:
     BYTE_TYPE *k_data_seg_b=0;
     mem_addr k_data_top=0;    
 
-    mem_addr program_starting_address=0;   
+    mem_addr program_starting_address=0;
+    mem_addr program_starting_gp=0; // save during exec read so we can
+                                    // restore in wake()
     long initial_text_size=0;
     long initial_data_size=0;   
     long initial_data_limit=0;
@@ -336,7 +320,8 @@ protected:
     mult_div_unit MDU;
 
     /* Exported Variables: */
-    int cycle_level=0, cycle_running=0, cycle_steps=0, bare_machine=0;
+    int cycle_level=0, cycle_steps=0, bare_machine=0;
+    bool quiescent=0;
     int EX_bp_reg=0, MEM_bp_reg=0, CP_bp_reg=0, CP_bp_cc=0, CP_bp_z=0;
     reg_word EX_bp_val=0, MEM_bp_val=0, CP_bp_val=0;
     int FP_add_cnt=0, FP_mul_cnt=0, FP_div_cnt=0;
@@ -477,9 +462,14 @@ private:
 
     Output out;
     Interfaces::SimpleMem * memory;
-    std::map<uint64_t, PIPE_STAGE> requestsOut; //requests sent to memory 
+    typedef std::map<uint64_t, PIPE_STAGE> rOutMap_t;
+    rOutMap_t requestsOut; //requests sent to memory 
     std::map<PIPE_STAGE, memReq *> requestsIn; //requests recieved from memory 
-
+    /* requests sent to memory that should be squashed when they
+       return because the processor quiesced */
+    typedef std::set<uint64_t> squashSet_t;
+    squashSet_t squashReqs; 
+    
     TimeConverter *clockTC;
     Clock::HandlerBase *clockHandler;
 

@@ -156,6 +156,12 @@ void MIPS4KC::process_rising_MEM (PIPE_STAGE ps) {
  * function cl_run_rising: issue memory requests
  */
 void MIPS4KC::cl_run_rising () {
+    // if quiescent, there is nothing to do and no state should be
+    // advanced.
+    if (quiescent) {
+        return;
+    }
+    
     PIPE_STAGE ps_ptr = alu[MEM];
     if (ps_ptr != NULL) {            
         if (IS_MEM_OP(OPCODE(ps_ptr->inst))) {  // if it is a load            
@@ -177,9 +183,14 @@ int MIPS4KC::cl_run_falling (reg_word addr, int display)
     // check for register file & PC faults
     faultChecker.checkAndInject_RF(R);
     faultChecker.checkAndInject_PC_FAULT(addr);
+
+    // if quiescent, there is nothing to do and no state should be
+    // advanced.
+    if (quiescent) {
+        return false;
+    }
     
     PC = addr;
-    cycle_running = 1;
 
     int ret = cycle_spim (display);
 
@@ -202,7 +213,6 @@ int MIPS4KC::cl_run_falling (reg_word addr, int display)
             nPC = 0;
             cycle_init ();
             kill_prog_fds ();
-            cycle_running = 0;            
             return true;
 	}
     } else if (ret == 2) {
@@ -210,6 +220,7 @@ int MIPS4KC::cl_run_falling (reg_word addr, int display)
         return true;
     }
 
+    // normal case
     return false;
 }
 
@@ -244,6 +255,41 @@ void MIPS4KC::cycle_init (void)
   program_break = ((program_break / 32) + 1) * 32;
 }
 
+/* Go into  quiescent state after a fault */
+void MIPS4KC::quiesce(void) {
+    out.output(CALL_INFO, "quiescing core %d, PC:%x @ %lld\n",
+               proc_num,
+               program_starting_address,
+               reg_word::getNow());
+    out.output(CALL_INFO, "   %lu requests outstanding\n",
+               requestsOut.size());
+
+    for(rOutMap_t::iterator i = requestsOut.begin();
+        i != requestsOut.end(); ++i) {
+        squashReqs.insert(i->first);
+    }
+    squashReqs.clear();
+    
+    quiescent = 1;
+}
+
+/* Leave quiescent after a reset */
+void MIPS4KC::wake_from_reset(void) {
+    out.output(CALL_INFO, "waking core %d to PC:%x GP:%x @ %lld\n",
+               proc_num,
+               program_starting_address,
+               program_starting_gp,
+               reg_word::getNow());
+    
+    initialize_registers();
+    initialize_run_stack (0, 0);
+    cycle_init ();
+    mdu_and_fp_init ();
+    PC = program_starting_address;
+    R[REG_GP] = program_starting_gp;
+    nPC = 0;
+    quiescent = 0;
+}
 
 /* should be called when floating point and mdu unit are starting fresh */
 

@@ -63,11 +63,6 @@ void MIPS4KC::initialize_world (int load_trap_handler)
 	       initial_k_data_size, initial_k_data_limit);
   initialize_registers ();
   initialize_sighandlers();
-
-  /* cycle level stuff */
-  //mem_system = mem_sys_init ();
-  cycle_running = 0;
-
 }
 
 

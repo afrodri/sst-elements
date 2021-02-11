@@ -1,8 +1,8 @@
-// Copyright 2019,2020 NTESS. Under the terms
+// Copyright 2019,2020,2021 NTESS. Under the terms
 // of Contract DE-NA0003525 with NTESS, the U.S.
 // Government retains certain rights in this software.
 //
-// Copyright (c) 2019,2020 NTESS
+// Copyright (c) 2019,2020,2021 NTESS
 // All rights reserved.
 //
 // Portions are copyright of other developers:
@@ -38,7 +38,7 @@ MIPS4KC::MIPS4KC(ComponentId_t id, Params& params) :
     break_inst(NULL), program_break(0), 
     breakpoint_reinsert(0), text_seg(0), text_modified(0), text_top(0),
     data_seg(0), data_modified(0), data_seg_h(0), data_seg_b(0), 
-    data_top(0), DATA_BOT(0), cycle_level(0), cycle_running(0)
+    data_top(0), DATA_BOT(0), cycle_level(0), quiescent(0)
 {
     outputLevel = params.find<uint32_t>("verbose", 0);
     out.init("MIPS4KC:@p:@l: ", outputLevel, 0, Output::STDOUT);
@@ -160,8 +160,20 @@ void MIPS4KC::handleEvent(memReq *req)
 {
     //printf("got event %llx\n", req->id);
 
-    std::map<uint64_t, PIPE_STAGE>::iterator i = requestsOut.find(req->id);
+    rOutMap_t::iterator i = requestsOut.find(req->id);
     if (i == requestsOut.end()) {
+        // check for squashed requests
+        squashSet_t::iterator si = squashReqs.find(req->id);
+        if (si != squashReqs.end()) {
+            out.output(CALL_INFO, "recieved event to sqash: %llu @ %lld\n",
+                       req->id, reg_word::getNow());
+            // squash request
+            delete req;
+            // update req struct
+            squashReqs.erase(si);
+        }
+
+        // fail
 	out.fatal(CALL_INFO, -1, "Request ID (%" PRIx64 ") not found in outstanding requests!\n", req->id);
     } else {
         // handle event
@@ -196,7 +208,7 @@ bool MIPS4KC::clockTic( Cycle_t c)
         if (cl_run_falling (PC, outputLevel)) {
             primaryComponentOKToEndSim();
             return true; // stop
-        }
+        }    
     } else {
         cl_run_rising(); // issue memory requests
     }
