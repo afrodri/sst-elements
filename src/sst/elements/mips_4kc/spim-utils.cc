@@ -334,6 +334,8 @@ list_breakpoints ()
 /*VARARGS0*/
 void MIPS4KC::fatal_error (const char *fmt, ...)
 {
+  printf("Fatal Error: %s\n", fmt);
+
   va_list args;
   va_start (args, fmt);
   fmt = va_arg (args, char *);
@@ -343,6 +345,7 @@ void MIPS4KC::fatal_error (const char *fmt, ...)
 #else
   vfprintf (stderr, fmt, args);
 #endif
+  fflush(NULL);
   exit (-1);
   /*NOTREACHED*/
 }
