@@ -211,9 +211,10 @@ int MIPS4KC::cl_run_falling (reg_word addr, int display)
 	case -1:
             PC = 0;
             nPC = 0;
-            cycle_init ();
-            kill_prog_fds ();
-            return true;
+            //cycle_init ();
+            //kill_prog_fds ();
+            quiesce();
+            return false;
 	}
     } else if (ret == 2) {
         // we're done
