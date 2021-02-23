@@ -135,13 +135,15 @@ void MIPS4KC::process_rising_MEM (PIPE_STAGE ps) {
     case Y_CFC3_OP: case Y_MFC0_OP: case Y_MFC2_OP: case Y_MFC3_OP:
     case Y_CTC0_OP: case Y_CTC2_OP: case Y_CTC3_OP: case Y_MTC0_OP:
     case Y_MTC2_OP: case Y_MTC3_OP:
-        fatal_error("Coprocessors not supported");
+        out.output(CALL_INFO, "Coprocessors not supported\n");
+        CL_RAISE_EXCEPTION(CPU_EXCPT, (OPCODE (inst) - Y_LWC0_OP) , EXCPT(ps));
         break;
 
         /* FPU */
     case Y_LWC1_OP: case Y_SWC1_OP: case Y_MFC1_OP: case Y_LWL_OP:
     case Y_LWR_OP: case Y_SWL_OP: case Y_SWR_OP:
-        fatal_error("FPU not supported");
+        out.output(CALL_INFO, "FPU not supported\n");
+        CL_RAISE_EXCEPTION(CPU_EXCPT, (OPCODE (inst) - Y_LWC1_OP) , EXCPT(ps));
         break;
 
     default:
