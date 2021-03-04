@@ -186,9 +186,11 @@ int MIPS4KC::do_syscall (void)
 	  }
 
 	case EXIT_SYSCALL:
-	  if (cycle_level) return (-1);
-	  else
-	    return (0);
+            {
+                write_output(console_out, "EXIT_SYSCALL called by proc %d\n", 
+                             proc_num);
+                return (-1);
+            }
 
         case GET_PROC_NUM_SYSCALL:
             R[REG_RES] = proc_num;

@@ -143,7 +143,12 @@ void MIPS4KC::initialize_excpt_counts (void)
     excpt_handler[x].freq = 0;
 }
 
-
+/*
+  possible return values:
+  0: exception processed ok, continue execution
+  1: exception processed ok, stop execution 
+  -1: bad exception, signal or exit. quiesce()
+*/
 int MIPS4KC::process_excpt (void)
 {
   int retval = 0;
@@ -191,10 +196,11 @@ int MIPS4KC::process_excpt (void)
         }
       retval = do_syscall();
 
-      if (retval == -1)
+      if (retval == -1) {
 	/* system call was exit */
-	return (-1);
-
+	return 1;
+      }
+        
       else if (retval == 0)
 	/* bad system call --> turn into a signal */
 	psignal (excpt_handler[SYSCALL_EXCPT].sig);
