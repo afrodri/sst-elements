@@ -127,10 +127,12 @@ int MIPS4KC::do_syscall (void)
 
 	case PRINT_FLOAT_SYSCALL:
 	  {
-	    float val = FPR_S (REG_FA0);
-
-	    write_output (console_out, "%f", val);
-	    break;
+              //Treat an integer register as a FP value (e.g. for soft-float)
+              int32_t data = R[REG_A0].getData();
+              float *fp = (float*)(&data); 
+              printf("PRINT_FLOAT_SYSCALL(p%d): %f 0x%x\n", proc_num, 
+                     *fp, R[REG_A0].getData());
+              break;
 	  }
 
 	case PRINT_DOUBLE_SYSCALL:
