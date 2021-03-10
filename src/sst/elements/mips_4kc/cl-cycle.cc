@@ -490,8 +490,10 @@ int MIPS4KC::cycle_spim (int display)
             }
         } else if (ps_ptr != NULL && (STAGE(ps_ptr) == IF))  {
             /* IF Stage */
-            if (STAGE_PC(ps_ptr).getData() == last_text_addr) {
+            if (STAGE_PC(ps_ptr).getData() == last_text_addr+4) {
                 // we are done with the program
+                printf("Exiting at addr 0x%x (presumed end of program)\n",
+                       last_text_addr.getData()+4);
                 return 2;
             }
 
@@ -526,7 +528,9 @@ int MIPS4KC::cycle_spim (int display)
 
   
     /* if we got this far, get next instruction into IF stage */
-    alu[IF] = stage_alloc();
+    if (alu[IF] == 0) {
+        alu[IF] = stage_alloc();
+    }
     STAGE (alu[IF]) = IF;
     STAGE_PC (alu[IF]) = PC;
     /* do a dummy read just so we can see the instruction in the pipeline */
@@ -1794,7 +1798,7 @@ void MIPS4KC::process_MEM (PIPE_STAGE ps, memReq *req)
   inst = ps->inst;
 
   if (outputLevel > 0) {
-      printf("process_MEM ");  print_inst(ps->pc.getData()); printf("\n");
+      printf("process_MEM ");  print_inst(ps->pc.getData()); printf("  addr:0x%x\n", ADDR(ps).getData());
   }
 
   /* only load instructions update the MEM bypass variables
@@ -2360,8 +2364,9 @@ PIPE_STAGE MIPS4KC::stage_alloc (void)
 {
   PIPE_STAGE tmp;
 
-  if (head_pool == NULL)
+  if (head_pool == NULL) {
     init_stage_pool();
+  } 
 
   tmp = head_pool;
   head_pool = head_pool->next;
