@@ -304,6 +304,8 @@ void MIPS4KC::bad_mem_write (mem_addr addr, mem_word value, int mask)
 {
   mem_word tmp;
 
+  printf("bad_mem_write - possible overrun of data segment in load\n");
+
   if (addr & mask)
     /* Unaligned address fault */
     RAISE_EXCEPTION (ADDRS_EXCPT, BadVAddr = addr)
