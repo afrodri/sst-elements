@@ -109,7 +109,7 @@ typedef uint32_t mem_addr;
 /* Initial size of data segment. */
 
 #ifndef DATA_SIZE
-#define DATA_SIZE	256*K	/* 1/4 MB */
+#define DATA_SIZE	32*1024*K	/* 32 MB */
 #endif
 
 /* Maximum size of data segment. */
