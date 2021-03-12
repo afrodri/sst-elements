@@ -68,17 +68,17 @@ int main() {
 	errors++;
 	asm volatile ("move $a0, %0\n"   /* Move 'b' into $a0 */
 		      "li $v0, 1\n"      /* Set for 'PRINT_INT' syscall */
-		      "syscall" : : "r" (resultM[i][j]));
+		      "syscall" : : "r" (resultM[i][j]) : "$a0", "$v0");
 	asm volatile ("move $a0, %0\n"   /* Move 'b' into $a0 */
 		      "li $v0, 1\n"      /* Set for 'PRINT_INT' syscall */
-		      "syscall" : : "r" (goldenM[i][j]));
+		      "syscall" : : "r" (goldenM[i][j]) : "$a0", "$v0");
       }
     }
   }
 
   asm volatile ("move $a0, %0\n"   /* Move 'b' into $a0 */
 		"li $v0, 1\n"      /* Set for 'PRINT_INT' syscall */
-		"syscall" : : "r" (errors));
+		"syscall" : : "r" (errors) : "$a0", "$v0");
 
   return 0;
 }

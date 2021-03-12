@@ -19,12 +19,12 @@ int main() {
   uint32_t proc_num;
   asm volatile ("li $v0, 11\n"      /* Set for 'GET_PROC_NUM_SYSCALL' syscall */
 		"syscall\n"
-		"move %0, $2" : "=r" (proc_num) : : "v0");
+		"move %0, $2" : "=r" (proc_num) : "$v0");
   
   // print proc_num
   asm volatile ("move $a0, %0\n"   /* Move 'proc_num' into $a0 */
 		"li $v0, 1\n"      /* Set for 'PRINT_INT' syscall */
-		"syscall" : : "r" (proc_num) : "v0");
+		"syscall" : : "r" (proc_num) : "$v0", "$a0");
   
   
   // put data in send buffer
