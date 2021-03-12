@@ -228,6 +228,9 @@ int MIPS4KC::read_aout_file (const char *file_name)
                     }
                     store_byte(*wp, addr); // store
                     image[addr] = *wp; // record for later storage
+                    if (image.size() > DATA_SIZE) {
+                        out.fatal(CALL_INFO,-1, "Executable's Data segment is larger than allocated data region (DATA_SIZE)\n");
+                    }
                     if (outputLevel > 0) {
                         printf("store data %x to %x\n", *wp, addr);
                     }
