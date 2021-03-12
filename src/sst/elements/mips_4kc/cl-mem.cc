@@ -64,6 +64,8 @@ void MIPS4KC::CL_READ_MEM(reg_word &LOC, const reg_word &ADDR,
             LOC = k_data_seg_h [(_addr_ - K_DATA_BOT)>>1];
         else CL_RAISE_EXCEPTION(tmp, 0, EXPT);
     } else if (sz == 4) {
+        //printf("addr %x %x-%x %x-%x %x-%x\n", _addr_, DATA_BOT, data_top, stack_bot, STACK_TOP, K_DATA_BOT, k_data_top);
+        
         if (_addr_ >= DATA_BOT && _addr_ < data_top)
             LOC = data_seg [(_addr_ - DATA_BOT)>>2];
         else if (_addr_ >= stack_bot && _addr_ < STACK_TOP)

@@ -408,7 +408,7 @@ public:
     }
 
     reg_word shift_right_logical(const reg_word &shamt) const {
-        reg_word newWord;                                              
+        reg_word newWord;
         newWord.data = ((uint32_t)data) >> shamt.data;
         newWord.origData = ((uint32_t)origData) >> shamt.origData;
         newWord.faults.insert(newWord.faults.end(),                    
@@ -423,8 +423,8 @@ public:
 
     reg_word unsigned_mod(const reg_word &rhs) const {
         reg_word newWord;                                              
-        newWord.data = (uint64_t)data % (uint64_t)rhs.data;      
-        newWord.origData = (uint64_t)origData % (uint64_t)rhs.origData;  
+        newWord.data = (uint32_t)data % (uint32_t)rhs.data;      
+        newWord.origData = (uint32_t)origData % (uint32_t)rhs.origData;  
         newWord.faults.insert(newWord.faults.end(),                    
                               faults.begin(),                          
                               faults.end());                           
@@ -437,8 +437,8 @@ public:
 
     reg_word unsigned_div(const reg_word &rhs) const {
         reg_word newWord;                                              
-        newWord.data = (uint64_t)data / (uint64_t)rhs.data;      
-        newWord.origData = (uint64_t)origData / (uint64_t)rhs.origData;  
+        newWord.data = (uint32_t)data / (uint32_t)rhs.data;      
+        newWord.origData = (uint32_t)origData / (uint32_t)rhs.origData;  
         newWord.faults.insert(newWord.faults.end(),                    
                               faults.begin(),                          
                               faults.end());                           
