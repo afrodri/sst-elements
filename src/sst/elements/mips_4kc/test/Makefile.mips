@@ -1,0 +1,69 @@
+
+CC = ~/x-tools/mipsel-sde-elf/bin/mipsel-sde-elf-gcc
+DIS = ~/x-tools/mipsel-sde-elf/bin/mipsel-sde-elf-objdump -D
+CFLAGS = -nostartfiles
+
+all: matmat.out tmr_matmat.out dmr_matmat.out rd_matmat.out matmatO3.out tmr_matmatO3.out dmr_matmatO3.out rd_matmatO3.out fp_test.out
+fpga: matmat_fpga.out matmat_fpgaO3.out
+
+UARTTest.out: UARTTest.c
+	$(CC) $(CFLAGS) -O1 $^ -o $@
+
+UARTTest_fpga.out: UARTTest_fpga.c
+	$(CC) $(CFLAGS) -O0 $^ -o $@
+
+readerWriter.out: readerWriter.c
+	$(CC) $(CFLAGS) -O0 $^ -o $@
+
+fp_test.out: fp_test.c
+	$(CC) $(CFLAGS) -msoft-float -O0 $^ -o $@
+
+fp_test2.o: fp_test2.c
+	$(CC) $(CFLAGS) -c -msoft-float -O0 $< -o $@
+
+fp_test3.o: fp_test3.c
+	$(CC) $(CFLAGS) -c -msoft-float -O0 $< -o $@
+
+fp_test3: fp_test3.o
+	$(CC) $(CFLAGS) -msoft-float -O0 $< -o $@
+
+soft-fp/divsf3.o: soft-fp/divsf3.c
+	$(CC) $(CFLAGS) -c -msoft-float -I./soft-float -O0 $< -o $@
+
+fp_test2: fp_test2.o soft-fp/divsf3.o
+	$(CC) $(CFLAGS) -msoft-float -O0 $^ -o $@
+
+#relocated to kseg1
+matmat_fpga.out : matmat_fpga.c
+	$(CC) $(CFLAGS) -O0 -Ttext=0xa04000B0 $^ -o $@
+	$(DIS) $@ > matmat_fpga.dis
+
+matmat_fpgaO3.out : matmat_fpga.c
+	$(CC) $(CFLAGS) -O3 -Ttext=0xa04000B0 $^ -o $@
+	$(DIS) $@ > matmat_fpgaO3.dis
+
+matmat.out : matmat.c
+	$(CC) $(CFLAGS) -O0 $^ -o $@
+
+matmatO3.out : matmat.c
+	$(CC) $(CFLAGS) -O3 $^ -o $@
+
+tmr_matmat.out : tmr_matmat.c
+	$(CC) $(CFLAGS) -O0 $^ -o $@
+
+tmr_matmatO3.out : tmr_matmat.c
+	$(CC) $(CFLAGS) -O3 $^ -o $@
+
+dmr_matmat.out : dmr_matmat.c
+	$(CC) $(CFLAGS) -O0 $^ -o $@
+
+dmr_matmatO3.out : dmr_matmat.c
+	$(CC) $(CFLAGS) -O3 $^ -o $@
+
+rd_matmat.out : rd_matmat.c
+	$(CC) $(CFLAGS) -O0 $^ -o $@
+
+rd_matmatO3.out : rd_matmat.c
+	$(CC) $(CFLAGS) -O3 $^ -o $@
+
+# tmr_matmat.c -nostartfiles -o tmr_matmat.out
