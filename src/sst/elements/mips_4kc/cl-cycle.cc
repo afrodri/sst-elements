@@ -142,7 +142,8 @@ void MIPS4KC::process_rising_MEM (PIPE_STAGE ps) {
         /* FPU */
     case Y_LWC1_OP: case Y_SWC1_OP: case Y_MFC1_OP: case Y_LWL_OP:
     case Y_LWR_OP: case Y_SWL_OP: case Y_SWR_OP:
-        out.output(CALL_INFO, "FPU not supported\n");
+#warning mis-slassifies LWL/SWL/LWR/SWR as FP
+        out.output(CALL_INFO, "FPU not supported (p%d pc:%x)\n", proc_num, ps->pc.getData());
         CL_RAISE_EXCEPTION(CPU_EXCPT, (OPCODE (inst) - Y_LWC1_OP) , EXCPT(ps));
         break;
 
