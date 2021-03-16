@@ -105,9 +105,102 @@ static int syscall_usage[MAX_SYSCALL]; /* Track system calls */
 
 
 
+void MIPS4KC::demo_syscall() {
+    int32_t arg = R[REG_A1].getData();
+
+    switch(R[REG_A0].getData()) {
+    case 0:
+        write_output(console_out, "p%d: Starting Terrcor Program", proc_num);
+        break;
+
+    case 1:
+        write_output(console_out, "p%d: Initializing Static Integer LUT", proc_num);
+        break;
+
+    case 2:
+        write_output(console_out, "p%d: Waiting for input from TMP", proc_num);
+        break;
+        
+    case 3:
+        write_output(console_out, "p%d: Starting MRND algorithm (truncated)", proc_num);
+        break;
+        
+    case 4:
+        write_output(console_out, "p%d: MRND init complete. Starting compute.", proc_num);
+        break;
+
+    case 5:
+        {
+
+            float *fp = (float*)(&arg); 
+            write_output(console_out, "p%d: Computed minRange for point: %f",
+                         proc_num, *fp);
+        }
+        break;
+
+    case 6:
+        write_output(console_out, "p%d: Sending minRange data to TMP. ",
+                     proc_num);
+        break;
+        
+    case 7:
+        write_output(console_out, "\tp%d: Sending Data to TerrCorr Processor.",
+                     proc_num);
+        break;
+
+    case 8:
+        write_output(console_out, "\tp%d: Waiting for data (%d).",
+                     proc_num, arg);
+        break;
+
+    case 9:
+        write_output(console_out, "\tp%d: Timeout detected. Sending reset.",
+                     proc_num);
+        break;
+
+    case 10:
+        {
+            float *fp = (float*)(&arg); 
+            write_output(console_out, "\tp%d: Recieved range data: %f.",
+                         proc_num, *fp);
+        }
+        break;
+        
+    case 11:
+        {
+            float *fp = (float*)(&arg); 
+            write_output(console_out, "\tp%d: Range differnce: %f.",
+                         proc_num, *fp);
+        }
+        break;
+        
+    case 12:
+        write_output(console_out, "\tp%d: Range correct.",
+                     proc_num);
+        break;
+        
+    case 13:
+        write_output(console_out, "\tp%d: Range incorrect. Sending reset.",
+                     proc_num);
+        break;
+        
+    case 14:
+        write_output(console_out, "p%d: Recieved 0x%x from TMP.",
+                     proc_num, arg);
+        break;
+        
+    default:
+        write_output(console_out, "p%d: UNKNOWN DEMO CALL", proc_num);
+    }
+
+    write_output(console_out, " (Point %d)\n", R[REG_A0].getData());
+    
+    // put in sleep?
+}
+
+
 /* Decides which syscall to execute or simulate.  Returns zero upon
    exit syscall and non-zero to continue execution. */
-
 int MIPS4KC::do_syscall (void)
 {
 #warning check for wrong syscall
@@ -194,6 +287,21 @@ int MIPS4KC::do_syscall (void)
 
         case GET_PROC_NUM_SYSCALL:
             R[REG_RES] = proc_num;
+            break;
+
+        case RESET_MIPS4KC_SYSCALL:
+            // Send the RESET event down the link
+            if (Reset) {
+                Reset->send(new resetSignalEvent());
+            } else {
+                out.fatal(CALL_INFO, -1, "Reset Syscall found, but no Reset link configured\n");
+            }
+            break;
+
+        // a rather fake 'system call' to print out pre-canned
+        // messages for a demo
+        case DEMO_SYSCALL:
+            demo_syscall();
             break;
 
 	default:
