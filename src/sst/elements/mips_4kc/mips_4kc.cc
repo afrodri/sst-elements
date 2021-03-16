@@ -62,6 +62,13 @@ MIPS4KC::MIPS4KC(ComponentId_t id, Params& params) :
     if (!memory)
         out.fatal(CALL_INFO, -1, "Unable to load memHierarchy.memInterface subcomponent\n");
 
+    // configure out links
+    Reset = configureLink("reset_link", new Event::Handler<MIPS4KC>(this,
+                           &MIPS4KC::resetMIPS4KCEvent));
+    if (0 == Reset) {
+        out.output(CALL_INFO, "No Reset Link Configured\n");
+    }
+    
     // set timeout
     timeout = params.find<int64_t>("timeout", -1);
 
@@ -180,6 +187,17 @@ void MIPS4KC::handleEvent(memReq *req)
         requestsIn.insert(std::make_pair(i->second,req));
         // clean up
         requestsOut.erase(i);
+    }
+}
+
+void MIPS4KC::resetMIPS4KCEvent(SST::Event *ev)
+{
+    // Reboot MIPS
+    resetSignalEvent *event = dynamic_cast<resetSignalEvent*>(ev);
+    if (event) {
+        wake_from_reset();
+    } else {
+        out.fatal(CALL_INFO,-1,"Recieved non-reset event on reset Link\n");
     }
 }
 

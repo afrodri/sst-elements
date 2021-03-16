@@ -25,7 +25,8 @@ libmips_4kc_la_SOURCES = \
 	reg.h \
 	faults.h \
 	faults.cc \
-	mips-syscall.cc 
+	mips-syscall.cc \
+	resetSignalEvent.h
 
 
 EXTRA_DIST = \

@@ -37,6 +37,7 @@
 #include "reg.h"
 #include "mem.h"
 #include "faults.h"
+#include "resetSignalEvent.h"
 
 #include "cl-cache.h"
 #include "cl-cycle.h"
@@ -106,7 +107,9 @@ public:
             {"proc_num","Processor Number, returned by syscall","0"}
                             )
 
-    SST_ELI_DOCUMENT_PORTS( {"mem_link", "Connection to memory", { "memHierarchy.MemEventBase" } } )
+    SST_ELI_DOCUMENT_PORTS(
+                           {"mem_link", "Connection to memory", { "memHierarchy.MemEventBase" } },
+                           {"reset_link", "Link to external MIPS RESET port", { "mips_4kc.resetSignalEvent" } })
 
     /* Begin class definiton */
     MIPS4KC(SST::ComponentId_t id, SST::Params& params);
@@ -190,6 +193,7 @@ protected:
     int reverse_fds (int fd);
     void setup_signal_stack (void);
     int unixsyscall (void);
+    void demo_syscall();
     int prog_sigmask = 0;	/* Copy of sigmask passed to system */
     //mem_addr exception_address[NSIG]; /* trampoline addresses for */
 					 /* each signal handler */
@@ -459,7 +463,8 @@ private:
     
     void handleEvent( SST::Interfaces::SimpleMem::Request * req );
     virtual bool clockTic( SST::Cycle_t );
-
+    void resetMIPS4KCEvent(SST::Event *ev);
+    
     Output out;
     Interfaces::SimpleMem * memory;
     typedef std::map<uint64_t, PIPE_STAGE> rOutMap_t;
@@ -472,7 +477,7 @@ private:
     
     TimeConverter *clockTC;
     Clock::HandlerBase *clockHandler;
-
+    SST::Link* Reset;
 };
 
 }

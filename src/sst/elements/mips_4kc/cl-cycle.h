@@ -157,6 +157,8 @@
 #define SBRK_SYSCALL		9
 #define EXIT_SYSCALL		10
 #define GET_PROC_NUM_SYSCALL    11
+#define RESET_MIPS4KC_SYSCALL   12
+#define DEMO_SYSCALL            13
 
 
 
