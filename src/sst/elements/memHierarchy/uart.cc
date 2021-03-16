@@ -210,12 +210,15 @@ void UART::handleRead(MemEvent *resp) {
         if (!incomingBuffer.empty()) { // if nothing to read, return 0s
             uint8_t inData = 0;
             int dataOffset = 0;
+            printf("UART Read from buffer:");
             while((dataOffset < maxRespSize) && !incomingBuffer.empty()) {
                 inData = incomingBuffer.front();
                 incomingBuffer.pop_front();
                 payload[dataOffset] = inData;
+                printf("0x%x ", inData);
                 dataOffset++;
             }
+            printf("\n");
         } 
     }
     resp->setPayload(payload);
