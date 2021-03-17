@@ -37,6 +37,7 @@ UART::UART(ComponentId_t id, Params &params) : MemController(id, params) {
     // initilize other_uart link
     other_UART = configureLink( "other_UART", "1ns",
                                 new Event::Handler<UART>(this, &UART::handleUARTEvent));
+    verbose = params.find<uint32_t>("verbose", 0);
 }
 
 void UART::init(unsigned int phase) {
@@ -146,7 +147,7 @@ void UART::handleMemEvent( MemEvent *ev ) {
 }
 
 void UART::handleWrite(MemEvent *event) {
-    printf("Handle Write\n");
+    //printf("Handle Write\n");
     /* Noncacheable events occur on byte addresses, others on line addresses */
     bool noncacheable = event->queryFlag(MemEvent::F_NONCACHEABLE);
     Addr addr = noncacheable ? event->getAddr() : event->getBaseAddr();
@@ -161,7 +162,9 @@ void UART::handleWrite(MemEvent *event) {
             // send to other UART from buffer
             UARTMessage *msg = new UARTMessage();
             msg->setData(tx_buffer);
-            printf("UART sending: 0x%08" PRIx32 "\n", msg->getData());
+            if (verbose) {
+                printf("UART sending: 0x%08" PRIx32 "\n", msg->getData());
+            }
             other_UART->send(msg);
         } else {
             // print buffer to stdout
@@ -173,15 +176,21 @@ void UART::handleWrite(MemEvent *event) {
         size_t size = event->getSize();
         int dataOffset = size-1;
         vector<uint8_t> &data = event->getPayload();
-        printf("uart adding to tx-buffer (sz %ld addr %llx):", size, addr);
+        if (verbose) {
+            printf("uart adding to tx-buffer (sz %ld addr %llx):", size, addr);
+        }
         while(dataOffset >= 0) {
             // add to buffer
-            printf("%x ", data[dataOffset]);
+            if (verbose) {
+                printf("%x ", data[dataOffset]);
+            }
             tx_buffer <<= 8;
             tx_buffer += data[dataOffset];
             dataOffset--;
         }
-        printf("\n");
+        if (verbose) {
+            printf("\n");
+        }
     }
 }
 
@@ -192,7 +201,9 @@ void UART::handleRead(MemEvent *resp) {
     vector<uint8_t> payload;
     payload.resize(resp->getSize(), 0);
 
-    printf("UART Read from %llx %d bytes\n", localAddr, resp->getSize());
+    if (verbose) {
+        printf("UART Read from %llx %d bytes\n", localAddr, resp->getSize());
+    }
 
     // we're a simple, humble 32-bit UART, not one of those fancy
     // 64-bit'ers
@@ -205,20 +216,28 @@ void UART::handleRead(MemEvent *resp) {
         if (!incomingBuffer.empty()) {
             payload[0] = 1;
         }
-        printf("UART ready status: %x\n", payload[0]);
+        if (verbose) {
+            printf("UART ready status: %x\n", payload[0]);
+        }
     } else { // read from buffer
         if (!incomingBuffer.empty()) { // if nothing to read, return 0s
             uint8_t inData = 0;
             int dataOffset = 0;
-            printf("UART Read from buffer:");
+            if (verbose) {
+                printf("UART Read from buffer:");
+            }
             while((dataOffset < maxRespSize) && !incomingBuffer.empty()) {
                 inData = incomingBuffer.front();
                 incomingBuffer.pop_front();
                 payload[dataOffset] = inData;
-                printf("0x%x ", inData);
+                if (verbose) {
+                    printf("0x%x ", inData);
+                }
                 dataOffset++;
             }
-            printf("\n");
+            if (verbose) {
+                printf("\n");
+            }
         } 
     }
     resp->setPayload(payload);
@@ -255,7 +274,9 @@ void UART::handleUARTEvent(SST::Event * event) {
     assert(msg);
 
     uint32_t inData = msg->getData();
-    printf("UART got %08x from other UART\n", inData);
+    if (verbose) {
+        printf("UART got %08x from other UART\n", inData);
+    }
     int dataOffset = 0;
     while(dataOffset < sizeof(inData)) {
         uint8_t d = inData & 0xff;

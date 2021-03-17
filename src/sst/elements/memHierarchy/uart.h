@@ -74,7 +74,9 @@ protected:
     /* Debug -triggered by output.fatal() and/or SIGUSR2 */
     virtual void printStatus(Output &out);
     //virtual void emergencyShutdown();
-    
+
+    // verbosity
+    uint32_t verbose;
 private:
     void handleUARTEvent(SST::Event *event);
 
