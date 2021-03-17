@@ -151,6 +151,10 @@ void MIPS4KC::CL_SET_MEM(const reg_word &ADDR, mem_addr &PADDR,
         in <<= 8;
         in |= req->data[i];
     }
+    if (VALUE.getData() != in) {
+        printf("p%d Bad Write Addr: %x val: %x in: %x\n", proc_num, _addr_,
+               VALUE.getData(), in);
+    }
     assert( VALUE.getData() == in);
     //printf("WRITE: %08x %08x\n", VALUE.getData(), in); 
  }
