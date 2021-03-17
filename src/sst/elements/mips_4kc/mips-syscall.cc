@@ -185,8 +185,8 @@ void MIPS4KC::demo_syscall() {
         break;
         
     case 14:
-        write_output(console_out, "p%d: Recieved 0x%x from TMP.",
-                     proc_num, arg);
+        write_output(console_out, "p%d: Recieved data from TMP.",
+                     proc_num);
         break;
         
     default:
