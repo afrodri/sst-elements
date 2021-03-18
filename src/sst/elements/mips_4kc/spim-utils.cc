@@ -87,6 +87,10 @@ void MIPS4KC::initialize_registers (void)
   FGR = (float *) FPR;
   FWR = (int *) FPR;
   //memclr (R, 32 * sizeof (reg_word));
+  for(int i = 0; i < 32; ++i) {
+      R[i] = reg_word(0);
+  }
+  HI = LO = 0;
   R[29] = STACK_TOP - BYTES_PER_WORD - 4096; /* Initialize $sp */
   PC = 0;
   Cause = 0;
