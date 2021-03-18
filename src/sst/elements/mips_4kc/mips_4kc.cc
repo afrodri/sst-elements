@@ -165,7 +165,7 @@ void MIPS4KC::init(unsigned int phase) {
 // handle incoming memory
 void MIPS4KC::handleEvent(memReq *req)
 {
-    //printf("got event %llx\n", req->id);
+    //printf(" got event id %llx, addr %llx\n", req->id, req->addr);
 
     rOutMap_t::iterator i = requestsOut.find(req->id);
     if (i == requestsOut.end()) {
@@ -211,8 +211,13 @@ bool MIPS4KC::clockTic( Cycle_t c)
     } else {
         if ((pipeCycle & 0xffff) == 1 && isFalling) {
             //printf("CYCLE %llu: %llu.%u\n", c, pipeCycle, isFalling);
-            out.output(CALL_INFO,"CYCLE %llu: %llu.%u\n", c, pipeCycle,
-                       isFalling);
+            out.output("CYCLE %llu/%llu", c, pipeCycle);
+            if (alu[IF]) {
+                printf(" :");
+                print_inst(alu[IF]->pc.getData());
+            } else {
+                printf("\n");
+            }
         }
     }
 
