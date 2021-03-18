@@ -47,6 +47,8 @@ void MIPS4KC::CL_READ_MEM(reg_word &LOC, const reg_word &ADDR,
     unsigned int tmp = tlb_vat(ADDR.getData(), 0, 1, &PADDR);
     tmp = DBUS_EXCPT; // exception to use if needed
 
+    assert(_addr_ == (req->addr & 0xffffffff));
+
     if (sz == 1) {
         if (_addr_ >= DATA_BOT && _addr_ < data_top)
             LOC = data_seg_b [_addr_ - DATA_BOT];
@@ -85,6 +87,7 @@ void MIPS4KC::CL_READ_MEM(reg_word &LOC, const reg_word &ADDR,
         data <<= 8;
         data |= req->data[i];
     }
+
     if ((outputLevel > 0) && (LOC.getData() != data)) {
         // seems to be caused by unaligned memory. not sure if error
         static int c = 0;
@@ -112,6 +115,8 @@ void MIPS4KC::CL_SET_MEM(const reg_word &ADDR, mem_addr &PADDR,
     const mem_addr _addr_ = (mem_addr) (ADDR.getData());
     unsigned int tmp = tlb_vat(ADDR.getData(), 0, 0, &PADDR); 
     tmp = DBUS_EXCPT; // exception to use if needed
+
+    assert(_addr_ == (req->addr & 0xffffffff));
     
     data_modified = 1; //needed?
 
