@@ -4,8 +4,12 @@
 PC Cycle 17479232  0x1
 # reset @ ~27.9M
 # Second error: Causes Corruption (wrong answer)
-MEM_POST Cycle 41209235 0xff
+#   targets load at 0x4028f8
+MEM_POST Cycle 41209236 0xffff
 # Third error: Changes Loop Bound (timeout)
-INST_TYPE Cycle 54867964 0x4
+#   targets slti at 0x402640
+INST_TYPE Cycle 67840921 0x4
+# Fourth error: loop count not initialized correctly, fails again
+#   demonstrates uncovering program error
 
 
