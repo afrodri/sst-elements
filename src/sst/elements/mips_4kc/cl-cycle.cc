@@ -69,7 +69,7 @@ void MIPS4KC::sendRequestToCache(PIPE_STAGE ps, bool isLoad, size_t memSz,
     req->flags |= memReq::F_NONCACHEABLE;
     memory->sendRequest(req);
     requestsOut.insert(std::make_pair(req->id, ps));
-    //printf(" sent id:%llx to cache\n", req->id);
+    printf("sent id:%llx to cache for addr %x\n", req->id, ADDR(ps).getData());
 }
 
 /* 
@@ -125,7 +125,6 @@ void MIPS4KC::process_rising_MEM (PIPE_STAGE ps) {
             data[1] = (uint8_t)((VALUE(ps).getData()>>8) & 0xff);
             data[0] = (uint8_t)((VALUE(ps).getData()>>0) & 0xff);
         }
-        //printf("store to cache: %x\n", ADDR(ps).getData());
         sendRequestToCache(ps, false, memSize, data);  
         break;
 
@@ -284,6 +283,25 @@ void MIPS4KC::wake_from_reset(void) {
                program_starting_address,
                program_starting_gp,
                reg_word::getNow());
+    out.output(CALL_INFO, "   %lu requests outstanding\n",
+               requestsOut.size());
+    out.output(CALL_INFO, "   %lu requestsIn waiting \n",
+               requestsIn.size());
+
+    // dispose of any waiting requests. They will never match
+    // (correctly)
+    if (!requestsIn.empty()) {
+        std::map<PIPE_STAGE, memReq *>::iterator i = requestsIn.begin();
+        for(; i != requestsIn.end(); ++i) {
+            memReq *req = i->second;
+            if (outputLevel > 0) {
+                printf("   Removing req id: %llx addr: %llx\n", req->id,
+                       req->addr);
+            }
+            delete req;
+        }
+        requestsIn.clear();
+    }
     
     initialize_registers();
     initialize_run_stack (0, 0);
