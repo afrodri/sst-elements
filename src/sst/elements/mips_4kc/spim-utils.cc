@@ -138,7 +138,9 @@ void MIPS4KC::initialize_run_stack (int argc, char **argv)
   for (p = environ; *p != '\0'; p++)
     addrs[j++] = copy_str_to_stack (*p);
 #endif
-  write_output (message_out, "NOT COPYING ENVIORN TO STACK\n");
+  if (!demoMode) {
+      write_output (message_out, "NOT COPYING ENVIORN TO STACK\n");
+  }
 
   R[REG_A1] = R[29];
   env_j = j;

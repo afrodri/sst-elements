@@ -25,6 +25,7 @@ using namespace SST;
 using namespace SST::MIPS4KCComponent;
 
 Cycle_t reg_word::now = 0;
+bool reg_word::demoMode = 0;
 uint64_t reg_word::faultStats[faultTrack::LAST_FAULT_STATUS] = {};
 map<int32_t, memFaultDesc> reg_word::memFaults;
 map<int32_t, uint8_t> reg_word::origMem;
@@ -42,6 +43,8 @@ MIPS4KC::MIPS4KC(ComponentId_t id, Params& params) :
 {
     outputLevel = params.find<uint32_t>("verbose", 0);
     out.init("MIPS4KC:@p:@l: ", outputLevel, 0, Output::STDOUT);
+
+    demoMode = params.find<uint32_t>("demo_mode", 0);
 
     // tell the simulator not to end without us
     registerAsPrimaryComponent();
@@ -162,6 +165,13 @@ void MIPS4KC::init(unsigned int phase) {
     image.clear();
 }
 
+void MIPS4KC::setup() {
+    if (demoMode) {
+        printf("Proc %d Loaded & Ready----------Go>\n", proc_num);
+        
+    }
+}
+
 // handle incoming memory
 void MIPS4KC::handleEvent(memReq *req)
 {
@@ -205,9 +215,11 @@ bool MIPS4KC::clockTic( Cycle_t c)
 {
     bool isFalling = (c & 0x1);
     Cycle_t pipeCycle = c >> 1;
-    reg_word::setNow(pipeCycle);  // for fault record keeping
+    reg_word::setNow(pipeCycle, demoMode);  // for fault record keeping
     if (outputLevel > 0) {
         printf("CYCLE %llu: %llu.%u\n", c, pipeCycle, isFalling);
+    } else if (demoMode) {
+        ;
     } else {
         if ((pipeCycle & 0xffff) == 1 && isFalling) {
             //printf("CYCLE %llu: %llu.%u\n", c, pipeCycle, isFalling);

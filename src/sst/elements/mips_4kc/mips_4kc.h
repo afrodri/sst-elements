@@ -104,7 +104,8 @@ public:
             {"fault_by_time", "(bool) Inject (old style) faults by time, not event count", "0"},
             {"timeout", "Timeout. Period (in cycles) after which the processor will automatically cease processing and print timeout message", "-1"},
             {"stack_top","Starting top of stack","0x80000000"},
-            {"proc_num","Processor Number, returned by syscall","0"}
+            {"proc_num","Processor Number, returned by syscall","0"},
+            {"demo_mode","Demo Mode. Suppresses some messages, adds strategic pauses.","0"}
                             )
 
     SST_ELI_DOCUMENT_PORTS(
@@ -116,7 +117,7 @@ public:
     void finish();
 
     // instruction handling (made public for fault handling)
-    static int print_inst_internal (char *buf, int len, instruction *inst, mem_addr addr);
+    static int print_inst_internal (char *buf, const int len, const instruction *inst, const mem_addr addr);
     static instruction *inst_decode (unsigned long int value);
     
 protected:
@@ -224,6 +225,7 @@ protected:
     int mapped_io;		/* Non-zero => activate memory-mapped IO */
     string execFile;
     uint32_t outputLevel;
+    uint32_t demoMode;
     uint32_t proc_num;
     int64_t timeout;
 
@@ -460,6 +462,7 @@ private:
     MIPS4KC(const MIPS4KC&); // do not implement
     void operator=(const MIPS4KC&); // do not implement
     void init(unsigned int phase);
+    void setup();
     
     void handleEvent( SST::Interfaces::SimpleMem::Request * req );
     virtual bool clockTic( SST::Cycle_t );

@@ -136,6 +136,7 @@ class reg_word {
     faultList_t faults;
 #warning should move from being statics to structure created by proc core
     static SST::Cycle_t now;
+    static bool demoMode;
     static uint64_t faultStats[faultTrack::LAST_FAULT_STATUS];
     static std::map<int32_t, memFaultDesc> memFaults;
     static std::map<int32_t, uint8_t> origMem;
@@ -196,7 +197,10 @@ class reg_word {
         }
 
         if (data != in) {
-            printf("SHADOW MISMATCH data:%x in:%x addr:%x\n", data, in, addr);
+            if (!demoMode) {
+                printf("SHADOW MISMATCH data:%x in:%x addr:%x\n",
+                       data, in, addr);
+            }
         }
 
         //assert(data == in);
@@ -224,8 +228,9 @@ class reg_word {
 
 public:
     // at top of cycle, set the current time for record keeping
-    static void setNow(SST::Cycle_t n) {
+    static void setNow(SST::Cycle_t n, bool _demoMode) {
         now = n;
+        demoMode = _demoMode;
     }
 
     static SST::Cycle_t getNow() {

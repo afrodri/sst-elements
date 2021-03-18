@@ -103,14 +103,16 @@ static int syscall_usage[MAX_SYSCALL]; /* Track system calls */
 #define SYSCALL_COUNT(SYSCALL)						\
   if (SYSCALL < MAX_SYSCALL && SYSCALL >= 0) syscall_usage[SYSCALL]++;
 
-
-
 void MIPS4KC::demo_syscall() {
+#define P1PRE "\t\t\t\t"
     int32_t arg = R[REG_A1].getData();
 
     switch(R[REG_A0].getData()) {
     case 0:
-        write_output(console_out, "p%d: Starting Terrcor Program", proc_num);
+        write_output(console_out, "+---------------------------------+\n");
+        write_output(console_out, "|p%d: (Re)Starting Terrcor Program|\n",
+                     proc_num);
+        write_output(console_out, "+---------------------------------+");
         break;
 
     case 1:
@@ -139,29 +141,29 @@ void MIPS4KC::demo_syscall() {
         break;
 
     case 6:
-        write_output(console_out, "p%d: Sending minRange data to TMP. ",
+        write_output(console_out, "p%d: Sending minRange data to TMP. --> ",
                      proc_num);
         break;
         
     case 7:
-        write_output(console_out, "\tp%d: Sending Data to TerrCorr Processor.",
+        write_output(console_out, P1PRE "p%d: <-- Sending Data to TerrCorr Processor.",
                      proc_num);
         break;
 
     case 8:
-        write_output(console_out, "\tp%d: Waiting for data (%d).",
+        write_output(console_out, P1PRE "p%d: Waiting for data (%d).",
                      proc_num, arg);
         break;
 
     case 9:
-        write_output(console_out, "\tp%d: TIMEOUT detected! Sending RESET.",
+        write_output(console_out, P1PRE "p%d: TIMEOUT detected! Sending RESET.",
                      proc_num);
         break;
 
     case 10:
         {
             float *fp = (float*)(&arg); 
-            write_output(console_out, "\tp%d: Recieved range data: %f.",
+            write_output(console_out, P1PRE "p%d: Recieved range data: %f.",
                          proc_num, *fp);
         }
         break;
@@ -169,23 +171,23 @@ void MIPS4KC::demo_syscall() {
     case 11:
         {
             float *fp = (float*)(&arg); 
-            write_output(console_out, "\tp%d: Range differnce: %f.",
+            write_output(console_out, P1PRE "p%d: Range differnce: %f.",
                          proc_num, *fp);
         }
         break;
         
     case 12:
-        write_output(console_out, "\tp%d: Range correct!",
+        write_output(console_out, P1PRE "p%d: Range CORRECT!",
                      proc_num);
         break;
         
     case 13:
-        write_output(console_out, "\tp%d: Range INCORRECT! Sending RESET.",
+        write_output(console_out, P1PRE "p%d: Range INCORRECT! Sending RESET.",
                      proc_num);
         break;
         
     case 14:
-        write_output(console_out, "p%d: Recieved data from TMP.",
+        write_output(console_out, "p%d: Recieved data from TMP. <--",
                      proc_num);
         break;
         
@@ -193,9 +195,14 @@ void MIPS4KC::demo_syscall() {
         write_output(console_out, "p%d: UNKNOWN DEMO CALL", proc_num);
     }
 
-    write_output(console_out, " (Point %d)\n", R[REG_A0].getData());
+    if (demoMode) {
+        write_output(console_out, "\n");
+    } else {
+        write_output(console_out, " (Point %d)\n", R[REG_A0].getData());
+    }
     
     // put in sleep?
+#undef P1PRE
 }
 
 

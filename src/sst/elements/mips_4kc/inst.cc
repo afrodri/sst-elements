@@ -175,7 +175,7 @@ void MIPS4KC::print_inst (mem_addr addr)
 }
 
 
-int MIPS4KC::print_inst_internal (char *buf, int length, instruction *inst, mem_addr addr)
+int MIPS4KC::print_inst_internal (char *buf, const int length, const instruction *inst, const mem_addr addr)
 {
   char *bp = buf;
   inst_info *entry;

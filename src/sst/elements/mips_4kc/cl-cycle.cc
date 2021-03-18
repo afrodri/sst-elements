@@ -260,12 +260,17 @@ void MIPS4KC::cycle_init (void)
 
 /* Go into  quiescent state after a fault */
 void MIPS4KC::quiesce(void) {
-    out.output(CALL_INFO, "quiescing core %d, PC:%x @ %lld\n",
-               proc_num,
-               program_starting_address,
-               reg_word::getNow());
-    out.output(CALL_INFO, "   %lu requests outstanding\n",
-               requestsOut.size());
+    if (demoMode) {
+        printf("----------   Core %d Faulted @ Cycle %lld ----------\n",
+               proc_num, reg_word::getNow());
+    } else {
+        out.output(CALL_INFO, "quiescing core %d, PC:%x @ %lld\n",
+                   proc_num,
+                   program_starting_address,
+                   reg_word::getNow());
+        out.output(CALL_INFO, "   %lu requests outstanding\n",
+                   requestsOut.size());
+    }
 
     for(rOutMap_t::iterator i = requestsOut.begin();
         i != requestsOut.end(); ++i) {
@@ -278,15 +283,23 @@ void MIPS4KC::quiesce(void) {
 
 /* Leave quiescent after a reset */
 void MIPS4KC::wake_from_reset(void) {
-    out.output(CALL_INFO, "waking core %d to PC:%x GP:%x @ %lld\n",
+    if (demoMode) {
+        printf("----------   Resetting core %d to PC:%x GP:%x @ Cycle %lld ----------\n",
                proc_num,
                program_starting_address,
                program_starting_gp,
                reg_word::getNow());
-    out.output(CALL_INFO, "   %lu requests outstanding\n",
-               requestsOut.size());
-    out.output(CALL_INFO, "   %lu requestsIn waiting \n",
+    } else {
+        out.output(CALL_INFO, "waking core %d to PC:%x GP:%x @ %lld\n",
+                   proc_num,
+                   program_starting_address,
+                   program_starting_gp,
+                   reg_word::getNow());
+        out.output(CALL_INFO, "   %lu requests outstanding\n",
+                   requestsOut.size());
+        out.output(CALL_INFO, "   %lu requestsIn waiting \n",
                requestsIn.size());
+    }
 
     // dispose of any waiting requests. They will never match
     // (correctly)

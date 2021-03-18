@@ -530,7 +530,7 @@ void faultChecker_t::checkAndInject_INST_TYPE_FAULT(pipe_stage *ps_ptr) {
         printf("INJECTING INST_TYPE Fault  @ %lld\n", reg_word::getNow());
         MIPS4KC::print_inst_internal(buf,128,ps_ptr->inst,
                                      STAGE_PC(ps_ptr).getData());
-        printf(" Changing %s ", buf);
+        printf(" Changing %p:%s ", ps_ptr->inst, buf);
         // get the old instruction encoding
         unsigned long encoding = ps_ptr->inst->encoding;
         // permute it
@@ -544,7 +544,7 @@ void faultChecker_t::checkAndInject_INST_TYPE_FAULT(pipe_stage *ps_ptr) {
         MIPS4KC::print_inst_internal(buf,128,newInst,
                                      STAGE_PC(ps_ptr).getData());
         newInst->faulted = 1;
-        printf("-> %s\n", buf);
+        printf("-> %p:%s\n", newInst, buf);
         // save it to pipe stage
         ps_ptr->inst = newInst;
     }
