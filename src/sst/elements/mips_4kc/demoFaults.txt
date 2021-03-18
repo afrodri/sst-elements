@@ -1,0 +1,11 @@
+# SEEEC SST/TERCOR Demo
+#
+# First error: Causes 'crash'
+PC Cycle 17479232  0x1
+# reset @ ~27.9M
+# Second error: Causes Corruption (wrong answer)
+MEM_POST Cycle 41209235 0xff
+# Third error: Changes Loop Bound (timeout)
+INST_TYPE Cycle 54867964 0x4
+
+
