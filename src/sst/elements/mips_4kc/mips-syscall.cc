@@ -154,7 +154,7 @@ void MIPS4KC::demo_syscall() {
         break;
 
     case 9:
-        write_output(console_out, "\tp%d: Timeout detected. Sending reset.",
+        write_output(console_out, "\tp%d: TIMEOUT detected! Sending RESET.",
                      proc_num);
         break;
 
@@ -175,12 +175,12 @@ void MIPS4KC::demo_syscall() {
         break;
         
     case 12:
-        write_output(console_out, "\tp%d: Range correct.",
+        write_output(console_out, "\tp%d: Range correct!",
                      proc_num);
         break;
         
     case 13:
-        write_output(console_out, "\tp%d: Range incorrect. Sending reset.",
+        write_output(console_out, "\tp%d: Range INCORRECT! Sending RESET.",
                      proc_num);
         break;
         

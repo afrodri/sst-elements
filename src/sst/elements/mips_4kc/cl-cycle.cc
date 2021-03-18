@@ -69,7 +69,7 @@ void MIPS4KC::sendRequestToCache(PIPE_STAGE ps, bool isLoad, size_t memSz,
     req->flags |= memReq::F_NONCACHEABLE;
     memory->sendRequest(req);
     requestsOut.insert(std::make_pair(req->id, ps));
-    printf("sent id:%llx to cache for addr %x\n", req->id, ADDR(ps).getData());
+    //printf("sent id:%llx to cache for addr %x\n", req->id, ADDR(ps).getData());
 }
 
 /* 
