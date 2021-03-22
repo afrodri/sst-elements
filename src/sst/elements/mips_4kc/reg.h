@@ -237,6 +237,10 @@ public:
         return now;
     }
 
+    static SST::Cycle_t getDemo() {
+        return demoMode;
+    }
+
     static void countWBFaults(const reg_word &value) {
         if (value.data != value.origData) {
             faultStats[faultTrack::WB_ERROR]++;

@@ -32,6 +32,8 @@
 
 #include <math.h>
 #include <stdio.h>
+#include <unistd.h>
+
 
 #include "y.tab.h"
 
@@ -263,6 +265,7 @@ void MIPS4KC::quiesce(void) {
     if (demoMode) {
         printf("----------   Core %d Faulted @ Cycle %lld ----------\n",
                proc_num, reg_word::getNow());
+        sleep(5);
     } else {
         out.output(CALL_INFO, "quiescing core %d, PC:%x @ %lld\n",
                    proc_num,
@@ -289,6 +292,7 @@ void MIPS4KC::wake_from_reset(void) {
                program_starting_address,
                program_starting_gp,
                reg_word::getNow());
+        sleep(5);
     } else {
         out.output(CALL_INFO, "waking core %d to PC:%x GP:%x @ %lld\n",
                    proc_num,

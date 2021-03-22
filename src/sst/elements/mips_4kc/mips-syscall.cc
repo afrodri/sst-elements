@@ -110,7 +110,7 @@ void MIPS4KC::demo_syscall() {
     switch(R[REG_A0].getData()) {
     case 0:
         write_output(console_out, "+---------------------------------+\n");
-        write_output(console_out, "|p%d: (Re)Starting Terrcor Program|\n",
+        write_output(console_out, "|p%d: (Re)Starting Tercor Program  |\n",
                      proc_num);
         write_output(console_out, "+---------------------------------+");
         break;
@@ -120,7 +120,8 @@ void MIPS4KC::demo_syscall() {
         break;
 
     case 2:
-        write_output(console_out, "p%d: Waiting for input from TMP", proc_num);
+        write_output(console_out, "p%d: Waiting for input from TMP <",
+                     proc_num);
         break;
         
     case 3:
@@ -128,7 +129,9 @@ void MIPS4KC::demo_syscall() {
         break;
         
     case 4:
-        write_output(console_out, "p%d: MRND init complete. Starting compute.", proc_num);
+        write_output(console_out, "p%d: MRND init complete. Starting compute.",
+                     proc_num);
+        sleep(3);
         break;
 
     case 5:
@@ -146,12 +149,12 @@ void MIPS4KC::demo_syscall() {
         break;
         
     case 7:
-        write_output(console_out, P1PRE "p%d: <-- Sending Data to TerrCorr Processor.",
+        write_output(console_out, P1PRE "p%d: <-- Sending Data to TerCor Processor.",
                      proc_num);
         break;
 
     case 8:
-        write_output(console_out, P1PRE "p%d: Waiting for data (%d).",
+        write_output(console_out, P1PRE "p%d: >  Waiting for data (#%d).",
                      proc_num, arg);
         break;
 
@@ -179,11 +182,13 @@ void MIPS4KC::demo_syscall() {
     case 12:
         write_output(console_out, P1PRE "p%d: Range CORRECT!",
                      proc_num);
+        sleep(2);
         break;
         
     case 13:
         write_output(console_out, P1PRE "p%d: Range INCORRECT! Sending RESET.",
                      proc_num);
+        sleep(5);
         break;
         
     case 14:

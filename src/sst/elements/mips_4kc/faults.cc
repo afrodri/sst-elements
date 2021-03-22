@@ -63,6 +63,7 @@ cycle-cl or as needed
 #include <algorithm>
 #include "faults.h"
 #include <fstream>
+#include <unistd.h>
 #include <sst/core/rng/mersenne.h>
 #include "mips_4kc.h"
 
@@ -483,6 +484,7 @@ void faultChecker_t::checkAndInject_MEM_POST(reg_word &data) {
     uint32_t flippedBits = 0;
     if(checkForFault(MEM_POST_FAULT, flippedBits)) {
         printf("INJECTING MEM_POST Fault @ %lld\n", reg_word::getNow());
+        if (reg_word::getDemo()) {sleep(5);}
         data.addFault(getFault(MEM_POST_FAULT, flippedBits));
     }
 }
@@ -547,6 +549,7 @@ void faultChecker_t::checkAndInject_INST_TYPE_FAULT(pipe_stage *ps_ptr) {
         printf("-> %p:%s\n", newInst, buf);
         // save it to pipe stage
         ps_ptr->inst = newInst;
+        if (reg_word::getDemo()) {sleep(5);}
     }
 }
 
@@ -589,6 +592,7 @@ void faultChecker_t::checkAndInject_PC_FAULT(reg_word &pc) {
     uint32_t flippedBits = 0;
     if(checkForFault(PC_FAULT, flippedBits)) {
         printf("INJECTING PC Fault @ %lld\n", reg_word::getNow());
+        if (reg_word::getDemo()) {sleep(5);}
         pc.addFault(getFault(PC_FAULT, flippedBits));
     }
 }

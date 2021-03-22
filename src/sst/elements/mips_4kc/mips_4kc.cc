@@ -167,8 +167,22 @@ void MIPS4KC::init(unsigned int phase) {
 
 void MIPS4KC::setup() {
     if (demoMode) {
+        for (int i = 0; i < 30; ++i) { 
+            printf("\n");
+        }
+        if (proc_num == 0) {
+            printf("+-----------------------+\n");
+            printf("| SEEEC SST/TerCor Demo |\n");
+            printf("+-----------------------+\n");
+        }
         printf("Proc %d Loaded & Ready----------Go>\n", proc_num);
-        
+        if (proc_num == 0) {
+            string in;
+            std::getline(cin, in);
+            for (int i = 0; i < 30; ++i) { 
+                printf("\n");
+            }
+        }
     }
 }
 
